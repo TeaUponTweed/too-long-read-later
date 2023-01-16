@@ -5,14 +5,14 @@ import os
 import pathlib
 
 import markdown
-
-# import premailer
 import pynliner
 import requests
 import trafilatura
 from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader
 
 from yesterdays_hackernews.send import send_mesage
+
 
 def get_yesterday() -> str:
     today = datetime.datetime.now()
@@ -20,26 +20,7 @@ def get_yesterday() -> str:
     return yesterday.strftime("%Y-%m-%d")
 
 
-# CSS_FILE = str(
-#     (
-#         pathlib.Path(os.path.dirname(os.path.abspath(__file__)))
-#         / ".."
-#         / ".."
-#         / "styles"
-#         / "modest.css"
-#     ).resolve()
-# )
-
-
 def get_markdown(url: str) -> str:
-    # response = requests.get(url)
-    # soup = BeautifulSoup(response.text, "html.parser")
-
-    # Extract the text
-    # text = soup.get_text()
-
-    # Convert the text to markdown
-    # markdown_text = markdown.markdown(text)
     downloaded = trafilatura.fetch_url(url)
     markdown_text = trafilatura.extract(
         downloaded,
@@ -48,15 +29,6 @@ def get_markdown(url: str) -> str:
         include_formatting=True,
         include_links=True,
     )
-    # # Extract and base64 encode the images
-    # img_tags = soup.find_all("img")
-    # for img in img_tags:
-    #     img_url = img["src"]
-    #     img_data = requests.get(img_url).content
-    #     base64_img = base64.b64encode(img_data).decode()
-    #     img_tag = f'<img src="data:image/jpeg;base64,{base64_img}">'
-    #     markdown_text = markdown_text.replace(str(img), img_tag)
-
     return markdown_text
 
 
@@ -89,9 +61,6 @@ def inline_css(html_string: str, css_string: str) -> str:
     return
 
 
-from jinja2 import Environment, FileSystemLoader
-
-
 def apply_template(template_name: str, context: dict) -> str:
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(template_name)
@@ -111,12 +80,6 @@ def pipeline():
             "markdown.extensions.sane_lists",
         ]
         html_output = markdown.markdown(markdown_text, extensions=extensions)
-        # with open(CSS_FILE, "r") as css:
-        #     css_string = css.read()
-        # import pdb; pdb.set_trace()
-        # print(html_output)
-        # html_output = pynliner.Pynliner().from_string(html_output).with_cssString(css_string).run()
-        # print(html_output)
         html_output = apply_template(
             "email_template.html",
             {"article_title": title, "article_url": link, "article_body": html_output},
@@ -125,5 +88,5 @@ def pipeline():
         send_mesage("teaupontweed@gmail.com", f"Hacker News: '{title}'", html_output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pipeline()

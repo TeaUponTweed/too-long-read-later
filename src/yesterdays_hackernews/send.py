@@ -5,7 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Iterator
 
-
 _FROM_ADDRESS = os.environ["EMAIL_ADDRESS"]
 
 
