@@ -4,16 +4,39 @@ import functools
 import os
 import pathlib
 from datetime import datetime, timedelta, timezone
+from typing import Tuple
+from urllib.parse import parse_qs, urljoin, urlparse
 
+import css_inline
 import markdown
 import prefect
 import pytz
 import requests
-import trafilatura
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
+from lxml.html.clean import Cleaner
+from readability import Document
 
 from yesterdays_hackernews.send import send_mesage
+
+
+def convert_to_absolute_links(url: str, html: str) -> str:
+    # Download the webpage
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Convert all relative links to absolute links
+    for link in soup.find_all("a"):
+        href = link.get("href")
+        if href:
+            link["href"] = urljoin(url, href)
+
+    for link in soup.find_all("link", attrs={"rel": "stylesheet"}):
+        href = link.get("href")
+        if href:
+            link["href"] = urljoin(url, href)
+
+    # Return the modified HTML
+    return str(soup)
 
 
 def hours_since_8am_mt():
@@ -21,7 +44,7 @@ def hours_since_8am_mt():
     now = datetime.now(mt)
     eight_am_today = now.replace(hour=8, minute=0, second=0, microsecond=0)
     if now.hour < 8:
-        eight_am_today = eight_am_today - datetime.timedelta(days=1)
+        eight_am_today = eight_am_today - timedelta(days=1)
     hours_passed = (now - eight_am_today).total_seconds() / 3600
     return round(hours_passed)
 
@@ -32,23 +55,49 @@ def get_yesterday() -> str:
     return yesterday.strftime("%Y-%m-%d")
 
 
-def get_markdown(url: str) -> str:
-    downloaded = trafilatura.fetch_url(url)
-    markdown_text = trafilatura.extract(
-        downloaded,
-        include_images=True,
-        include_comments=False,
-        include_formatting=True,
-        include_links=True,
-    )
-    return markdown_text
+_HTML_CLEANER = Cleaner(
+    scripts=True,
+    javascript=True,
+    comments=True,
+    style=False,
+    inline_style=False,
+    links=True,
+    meta=False,
+    add_nofollow=False,
+    page_structure=False,
+    processing_instructions=True,
+    embedded=False,
+    frames=False,
+    forms=False,
+    annoying_tags=False,
+    remove_tags=None,
+    remove_unknown_tags=False,
+    safe_attrs_only=False,
+)
+
+
+def extract_link(url: str) -> Tuple[str, str]:
+    # parse url to get response
+    o = urlparse(url)
+    query = parse_qs(o.query)
+    # extract the URL without query parameters
+    url = o._replace(query=None).geturl()
+    response = requests.get(url, params=query)
+    html = convert_to_absolute_links(url=url, html=response.text)
+    # inline CSS
+    html = css_inline.inline(html)
+    doc = Document(html, cleaner=_HTML_CLEANER)
+    # extract content
+    return doc.title(), doc.summary(html_partial=True)
 
 
 def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]:
     soup = BeautifulSoup(response.text, "html.parser")
     title_lines = soup.find_all("span", class_="titleline")
     links = [line.find("a") for line in title_lines]
-    return [(link["href"], link.string) for link in links if link['href'].startswith('http')][:14]
+    return [
+        (link["href"], link.string) for link in links if link["href"].startswith("http")
+    ][:14]
 
 
 @functools.lru_cache(maxsize=1)
@@ -64,19 +113,15 @@ def apply_template(template_name: str, context: dict) -> str:
     template = env.get_template(template_name)
     return template.render(context)
 
+
 def get_email_html(link, title):
-    # markdown_text = get_markdown(link)
-    # extensions = [
-    #     "markdown.extensions.fenced_code",
-    #     "markdown.extensions.tables",
-    #     "markdown.extensions.sane_lists",
-    # ]
-    # html_output = markdown.markdown(markdown_text, extensions=extensions)
+    _, html_output = extract_link(link)
     html_output = apply_template(
         "email_template.html",
-        {"article_title": title, "article_url": link}#, "article_body": html_output},
+        {"article_title": title, "article_url": link, "article_body": html_output},
     )
     return html_output
+
 
 def get_emails_to_send() -> list[str]:
     yesterday = get_yesterday()
@@ -86,11 +131,12 @@ def get_emails_to_send() -> list[str]:
     if 0 <= ix < len(articles_links_and_title) - 1 and ix % 2 == 0:
         url1, title1 = articles_links_and_title[ix]
         em1 = get_email_html(url1, title1)
-        url2, title2 = articles_links_and_title[ix+1]
+        url2, title2 = articles_links_and_title[ix + 1]
         em2 = get_email_html(url2, title2)
-        return [(title1,em1), (title2,em2)]
+        return [(title1, em1), (title2, em2)]
     else:
         return []
+
 
 @prefect.task
 def pipeline():

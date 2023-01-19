@@ -3,13 +3,11 @@ import smtplib
 from contextlib import contextmanager
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Iterator
-
-_FROM_ADDRESS = os.environ["EMAIL_ADDRESS"]
+from typing import Iterator, Optional
 
 
 def create_message(
-    subject: str, receiver: str, contents_html: str, sender: str = _FROM_ADDRESS
+    subject: str, receiver: str, contents_html: str, sender: str
 ) -> MIMEMultipart:
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart("alternative")
@@ -43,7 +41,12 @@ def _get_server() -> Iterator[smtplib.SMTP]:
         server.quit()
 
 
-def send_mesage(to: str, subject: str, msg: str, from_address=_FROM_ADDRESS):
-    msg = create_message(receiver=to, subject=subject, contents_html=msg)
+def send_mesage(to: str, subject: str, msg: str, from_address: Optional[str] = None):
+    if from_address is None:
+        from_address = os.environ["EMAIL_ADDRESS"]
+
+    msg = create_message(
+        receiver=to, subject=subject, contents_html=msg, sender=from_address
+    )
     with _get_server() as server:
         server.sendmail(from_address, to, msg.as_string())
