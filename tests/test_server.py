@@ -1,5 +1,7 @@
-from flask_testing import TestCase
-import tempfile
+# from flask_testing import TestCase
+
+from yesterdays_hackernews.app import app
+import pytest
 
 # TODO
 # make temp db
