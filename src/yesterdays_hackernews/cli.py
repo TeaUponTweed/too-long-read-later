@@ -71,17 +71,22 @@ def ingest_hn_date(db_file: str, date: str):
         db.insert_get_id(conn, "articles", to_insert_df)
 
 
-@cli.command("init")
-@click.option("-d", "--db-file", required=True, type=str)
-@click.option("-s", "--schema-file", required=True, type=str)
-def init_db(db_file: str, schema_file: str):
+def init_db_impl(db_file: str, schema_file: str) -> str:
     conn = sqlite3.connect(db_file, isolation_level=None)
     conn.execute("pragma journal_mode=wal")
     with open(schema_file) as fi:
         schema = fi.read()
         with db.transaction(conn):
             conn.executescript(schema)
-        print(schema)
+        return schema
+
+
+@cli.command("init")
+@click.option("-d", "--db-file", required=True, type=str)
+@click.option("-s", "--schema-file", required=True, type=str)
+def init_db(db_file: str, schema_file: str):
+    schema = init_db_impl(db_file=db_file, schema_file=schema_file)
+    print(schema)
 
 
 if __name__ == "__main__":
