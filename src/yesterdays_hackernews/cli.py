@@ -5,7 +5,7 @@ import click
 import pandas as pd
 import requests
 
-from yesterdays_hackernews import app, db
+from yesterdays_hackernews import utils, db
 
 
 @click.group()
@@ -16,8 +16,8 @@ def cli():
 @cli.command("cat-link")
 @click.argument("link", required=True, type=str)
 def cat_link(link: str):
-    title, html, _ = app.extract_link(link)
-    html = app.apply_template(
+    title, html, _ = utils.extract_link(link)
+    html = utils.apply_template(
         "email_template.html",
         {"article_title": title, "article_url": link, "article_body": html},
     )
@@ -26,10 +26,10 @@ def cat_link(link: str):
 
 def ingest_impl(url: str, date: str) -> pd.DataFrame:
     response = requests.get(url, params={"day": date})
-    links_and_title = app.get_articles_links_and_title(response)
+    links_and_title = utils.get_articles_links_and_title(response)
     rows = []
     for link, title in links_and_title:
-        _, html, scores = app.extract_link(link)
+        _, html, scores = utils.extract_link(link)
         if len(scores) > 0:
             readability_rms = math.sqrt(
                 sum(score**2 for score in scores) / len(scores)

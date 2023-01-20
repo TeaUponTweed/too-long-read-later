@@ -2,6 +2,7 @@ import base64
 import datetime
 import functools
 import os
+import sqlite3
 import pathlib
 from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
@@ -9,7 +10,6 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 import css_inline
 import markdown
-import prefect
 import pytz
 import requests
 from bs4 import BeautifulSoup
@@ -17,8 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from lxml.html.clean import Cleaner
 from readability import Document
 
-from yesterdays_hackernews.send import send_mesage
-
+from yesterdays_hackernews import db
 
 def convert_to_absolute_links(url: str, html: str) -> str:
     # Download the webpage
@@ -127,31 +126,68 @@ def get_email_html(link, title):
     return html_output
 
 
-def get_emails_to_send() -> list[str]:
-    yesterday = get_yesterday()
-    articles_links_and_title = get_yesterdays_top_ten(yesterday)[:14]
-    print(f"Got {len(articles_links_and_title )} artciles for {yesterday}")
-    ix = hours_since_8am_mt()
-    if 0 <= ix < len(articles_links_and_title) - 1 and ix % 2 == 0:
-        url1, title1 = articles_links_and_title[ix]
-        em1 = get_email_html(url1, title1)
-        url2, title2 = articles_links_and_title[ix + 1]
-        em2 = get_email_html(url2, title2)
-        return [(title1, em1), (title2, em2)]
+@functools.cache()
+def get_connection(db_file: Optional[str] = None) -> sqlite3.Connection:
+    if db_file is None:
+        db_file = os.environ["DB_FILE_LOC"]
+    return sqlite3.connect(db_file, isolation_level=None)
+
+
+def set_feedback(
+    conn: sqlite3.Connection,
+    colname: str,
+    article_id: int,
+    user_id: str,
+    sentiment: int,
+):
+    with db.transaction(conn):
+        conn.execute(
+            "UPDATE feedback SET ?=? WHERE article_id=? AND user_id=?",
+            (colname, sentiment, article_id, user_id),
+        )
+
+
+def confirm(conn: sqlite3.Connection, email: str):
+    with db.transaction(conn):
+        conn.execute(
+            """UPDATE users SET confirmed=? WHERE email=?""",
+            (1, email),
+        )
+
+
+def unsubscribe(conn: sqlite3.Connection, user_id: str):
+    with db.transaction(conn):
+        conn.execute(
+            "UPDATE users SET num_articles_per_day=? WHERE user_id=?", (0, user_id)
+        )
+
+
+def subscribe(
+    conn: sqlite3.Connection, email: str, user_id: str, num_articles_per_day: int
+):
+    with db.transaction(conn):
+        conn.execute(
+            """INSERT INTO users(email,user_id,num_articles_per_day, confirmed) VALUES(?,?,?,?)
+            ON CONFLICT(email) DO UPDATE SET num_articles_per_day=?;""",
+            (email, user_id, num_articles_per_day, 0, num_articles_per_day),
+        )
+
+
+def get_email(conn: sqlite3.Connection, user_id: str) -> Optional[str]:
+    with db.transaction(conn):
+        ret = conn.execute(
+            "SELCT email from users where user_id = ?", user_id
+        ).fetchone()
+    if len(ret):
+        return ret[0]
     else:
-        return []
+        return None
 
 
-@prefect.task
-def pipeline():
-    emails = get_emails_to_send()
-    for title, html_output in emails:
-        for email in os.environ["NEWS_EMAILS"].split():
-            send_mesage(email, f"Hacker News: '{title}'", html_output)
-
-
-if __name__ == "__main__":
-    schedule = prefect.schedules.CronSchedule(cron="5 * * * *")
-    with prefect.Flow("yesterdays_hackernews", schedule=schedule) as flow:
-        pipeline()
-    flow.run()
+def get_user_id(conn: sqlite3.Connection, email: str) -> Optional[str]:
+    with db.transaction(conn):
+        ret = conn.execute("SELCT user_id from users where email = ?", email).fetchone()
+    if len(ret):
+        return ret[0]
+    else:
+        return None
