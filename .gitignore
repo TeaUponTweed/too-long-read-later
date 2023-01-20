@@ -5,4 +5,7 @@ __pycache__
 logs/
 .DS_Store
 *.egg-info/
+data/news.db
+data/news.db-shm
+data/news.db-wal
 

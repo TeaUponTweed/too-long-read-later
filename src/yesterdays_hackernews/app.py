@@ -4,7 +4,7 @@ import functools
 import os
 import pathlib
 from datetime import datetime, timedelta, timezone
-from typing import Tuple
+from typing import List, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import css_inline
@@ -76,7 +76,7 @@ _HTML_CLEANER = Cleaner(
 )
 
 
-def extract_link(url: str) -> Tuple[str, str]:
+def extract_link(url: str) -> Tuple[str, str, List[float]]:
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
@@ -88,7 +88,11 @@ def extract_link(url: str) -> Tuple[str, str]:
     html = css_inline.inline(html)
     doc = Document(html, cleaner=_HTML_CLEANER)
     # extract content
-    return doc.title(), doc.summary(html_partial=True)
+    return (
+        doc.title(),
+        doc.summary(html_partial=True),
+        [el["content_score"] for el in doc.score_paragraphs().values()],
+    )
 
 
 def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]:
@@ -97,7 +101,7 @@ def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]
     links = [line.find("a") for line in title_lines]
     return [
         (link["href"], link.string) for link in links if link["href"].startswith("http")
-    ][:14]
+    ]
 
 
 @functools.lru_cache(maxsize=1)
@@ -125,7 +129,7 @@ def get_email_html(link, title):
 
 def get_emails_to_send() -> list[str]:
     yesterday = get_yesterday()
-    articles_links_and_title = get_yesterdays_top_ten(yesterday)
+    articles_links_and_title = get_yesterdays_top_ten(yesterday)[:14]
     print(f"Got {len(articles_links_and_title )} artciles for {yesterday}")
     ix = hours_since_8am_mt()
     if 0 <= ix < len(articles_links_and_title) - 1 and ix % 2 == 0:
