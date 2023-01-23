@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 CREATE TABLE IF NOT EXISTS articles (
-	scrape_date TEXT NOT NULL,
+	article_hn_date TEXT NOT NULL,
+	scrape_time INT NOT NULL,
 	title TEXT,
 	url TEXT NOT NULL,
 	-- extracted text
@@ -20,17 +21,8 @@ CREATE TABLE IF NOT EXISTS articles (
 	num_chars INT,
 	num_paragraphs INT,
 
-	UNIQUE(scrape_date, url)
+	UNIQUE(article_hn_date, url)
 );
-
--- CREATE TABLE IF NOT EXISTS article_features (
--- 	article_id INT NOT NULL,
--- 	readability_rms REAL,
--- 	readability_sum REAL,
--- 	readability_mean REAL,
--- 	num_words INT,
--- 	FOREIGN KEY(article_id) REFERENCES articles(rowid)
--- );
 
 
 CREATE TABLE IF NOT EXISTS feedback (

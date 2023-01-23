@@ -5,7 +5,7 @@ import os
 import sqlite3
 import pathlib
 from datetime import datetime, timedelta, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import css_inline
@@ -126,7 +126,7 @@ def get_email_html(link, title):
     return html_output
 
 
-@functools.cache()
+@functools.cache
 def get_connection(db_file: Optional[str] = None) -> sqlite3.Connection:
     if db_file is None:
         db_file = os.environ["DB_FILE_LOC"]
