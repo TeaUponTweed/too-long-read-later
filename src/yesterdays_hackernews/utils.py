@@ -2,10 +2,10 @@ import base64
 import datetime
 import functools
 import os
-import sqlite3
 import pathlib
+import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import css_inline
@@ -18,6 +18,7 @@ from lxml.html.clean import Cleaner
 from readability import Document
 
 from yesterdays_hackernews import db
+
 
 def convert_to_absolute_links(url: str, html: str) -> str:
     # Download the webpage

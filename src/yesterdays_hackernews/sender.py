@@ -1,7 +1,8 @@
-
 import prefect
+
 from yesterdays_hackernews import utils
 from yesterdays_hackernews.send import send_mesage
+
 
 def get_emails_to_send() -> list[str]:
     yesterday = utils.get_yesterday()

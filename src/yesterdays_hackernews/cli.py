@@ -5,7 +5,7 @@ import click
 import pandas as pd
 import requests
 
-from yesterdays_hackernews import utils, db
+from yesterdays_hackernews import db, utils
 
 
 @click.group()
