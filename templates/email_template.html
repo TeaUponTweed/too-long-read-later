@@ -5,14 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   </head>
 <body>
-  <center>
     <a href="{{ article_url }}"> Original Artcile: {{ article_title }} </a>
-  </center>
   <div>
     {{ article_body }}
   </div>
-  <center>
-    <a href="{{ article_url }}"> Original Artcile: {{ article_title }} </a>
-  </center>
+  <div>
+    <a href="{{ article_url }}"> Original Artcile: {{ article_title }} </a>    
+  </div>
+  <div>
+    <a href="news.derivativeworks.co/unsubscribe?user_uuid={{user_uuid}}">Unsubscribe</a>
+  </div>
+
+  <div>
+    Feedback:
+    <ul>
+      <li><a href="news.derivativeworks.co/feedback/sentiment?sentiment=1&user_uuid={{user_uuid}}">Interesting</a> / <a href="news.derivativeworks.co/feedback/sentiment?sentiment=-1&user_uuid={{user_uuid}}">Not Interesting</a></li>
+      <li><a href="news.derivativeworks.co/feedback/format_quality?sentiment=1&user_uuid={{user_uuid}}">Well Formatted</a> / <a href="news.derivativeworks.co/feedback/format_quality?sentiment=-11&user_uuid={{user_uuid}}">Not Well Formatted</a></li>
+      <li><a href="news.derivativeworks.co/feedback/should_format?sentiment=1&user_uuid={{user_uuid}}">Should Inline</a> / <a href="news.derivativeworks.co/feedback/should_format?sentiment=-1&user_uuid={{user_uuid}}">Should Not Inline</a></li>
+      <li><a href="news.derivativeworks.co">Change Article Preferences</li>
+    </ul>
+  </div>
 </body>
 </html>

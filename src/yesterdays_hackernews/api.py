@@ -44,6 +44,7 @@ def feedback_route(col_name: str):
             except ValueError:
                 return "Bad feedback column", 400
             else:
+                # TODO allow a person to undo the feedback
                 return "Success", 200
 
 
@@ -95,6 +96,16 @@ def subscribe_route():
         num_articles_per_day=num_articles_per_day,
     )
     return "Success", 200
+
+
+@api.route("/")
+def home():
+    return send_file("static/index.html")
+
+
+@api.route("/static/<path:path>")
+def send_static(path):
+    return send_from_directory("static", path)
 
 
 if __name__ == "__main__":

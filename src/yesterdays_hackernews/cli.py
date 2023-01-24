@@ -1,5 +1,6 @@
 import math
 import sqlite3
+from typing import Optional
 
 import click
 import pandas as pd
@@ -15,12 +16,29 @@ def cli():
 
 @cli.command("cat-link")
 @click.argument("link", required=True, type=str)
-def cat_link(link: str):
-    title, html, _ = utils.extract_link(link)
-    html = utils.apply_template(
-        "email_template.html",
-        {"article_title": title, "article_url": link, "article_body": html},
-    )
+@click.option("-u", "--user-uuid", required=False, type=str, default=None)
+@click.option("--inline/--no-inline", "inline", default=True)
+def cat_link(link: str, user_uuid: Optional[str], inline: bool):
+    title, html, _ = utils.extract_content(utils.get_page_response(link).text, url=link)
+    if inline:
+        html = utils.apply_template(
+            "email_template.html",
+            {
+                "article_title": title,
+                "article_url": link,
+                "article_body": html,
+                "user_uuid": user_uuid,
+            },
+        )
+    else:
+        html = utils.apply_template(
+            "email_template_no_inline.html",
+            {
+                "article_title": title,
+                "article_url": link,
+                "user_uuid": user_uuid,
+            },
+        )
     print(html)
 
 
@@ -29,7 +47,9 @@ def ingest_impl(url: str, date: str) -> pd.DataFrame:
     links_and_title = utils.get_articles_links_and_title(response)
     rows = []
     for link, title in links_and_title:
-        _, html, scores = utils.extract_link(link)
+        _, html, scores = utils.extract_content(
+            utils.get_page_response(link).text, url=link
+        )
         if len(scores) > 0:
             readability_rms = math.sqrt(
                 sum(score**2 for score in scores) / len(scores)

@@ -77,17 +77,17 @@ _HTML_CLEANER = Cleaner(
 )
 
 
-def extract_link(url: str) -> Tuple[str, str, List[float]]:
+def get_page_response(url: str) -> requests.Response:
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
     response = requests.get(url, params=query)
-    return rextract_link_impl(esponse.text)
+    return response
 
 
-def extract_link_impl(html: str) -> Tuple[str, str, List[float]]:
+def extract_content(html: str, url: str) -> Tuple[str, str, List[float]]:
     html = convert_to_absolute_links(url=url, html=html)
     # inline CSS
     html = css_inline.inline(html)
@@ -123,13 +123,13 @@ def apply_template(template_name: str, context: dict) -> str:
     return template.render(context)
 
 
-def get_email_html(link, title):
-    _, html_output = extract_link(link)
-    html_output = apply_template(
-        "email_template.html",
-        {"article_title": title, "article_url": link, "article_body": html_output},
-    )
-    return html_output
+# def get_email_html(link, title):
+#     _, html_output = extract_link(link)
+#     html_output = apply_template(
+#         "email_template.html",
+#         {"article_title": title, "article_url": link, "article_body": html_output},
+#     )
+#     return html_output
 
 
 @functools.cache
@@ -239,16 +239,12 @@ def get_articles_without_feedback(
     from articles
     cross join users
     where article_hn_date = ?
-    and not exists (select * from feedback where articles.rowid = feedback.article_id and users.rowid = feedback.user_id)
+    and not exists (
+        select * from feedback
+        where articles.rowid = feedback.article_id
+        and users.rowid = feedback.user_id
+    )
     """
-    # q = """
-    # select articles.rowid, users.rowid
-    # from articles
-    # cross join users
-    # left join feedback on ((feedback.article_id = articles.rowid) and (feedback.user_id = articles.rowid))
-    # where (feedback.article_id is null or feedback.user_id is null)
-    # and article_hn_date = ?
-    # """
     with db.transaction(conn):
         if user_row_ids is not None:
             q = q + " and users.rowid in ?"

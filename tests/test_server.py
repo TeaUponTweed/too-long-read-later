@@ -59,31 +59,26 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
                 "email": "asd1@asd.asd",
                 "confirmed": 0,
                 "num_articles_per_day": 0,
-                # "user_uuid": str(uuid.uuid4()),
             },
             {
                 "email": "asd2@asd.asd",
                 "confirmed": 0,
                 "num_articles_per_day": 1,
-                # "user_uuid": str(uuid.uuid4()),
             },
             {
                 "email": "asd3@asd.asd",
                 "confirmed": 1,
                 "num_articles_per_day": 0,
-                # "user_uuid": str(uuid.uuid4()),
             },
             {
                 "email": "asd4@asd.asd",
                 "confirmed": 1,
                 "num_articles_per_day": 1,
-                # "user_uuid": str(uuid.uuid4()),
             },
             {
                 "email": "asd5@asd.asd",
                 "confirmed": 1,
                 "num_articles_per_day": 13,
-                # "user_uuid": str(uuid.uuid4()),
             },
         ]
     )
@@ -96,14 +91,10 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
         )
         response = api.test_client().get(sub_url)
         assert response.status_code == 200
-        # print(conn.execute("select * from users").fetchall())
-        # import pdb; pdb.set_trace()
         if row.confirmed:
             response = api.test_client().get(f"/confirm?email={row.email}")
             assert response.status_code == 200
             with db.transaction(conn):
-                # print(conn.execute("select * from users").fetchall())
-                # import pdb; pdb.set_trace()
                 (confirmed,) = conn.execute(
                     "select confirmed from users where email = ?", (row.email,)
                 ).fetchone()
@@ -193,18 +184,28 @@ def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
 
 
 def test_ingest(db_loc: pathlib.Path):
-    with open("test_post.html") as fi:
+    link = "test_post_html"
+    with open("tests/test_post.html") as fi:
         html = fi.read()
-    title, summary, content = utls.extract_link_impl(html)
+    title, summary, content = utils.extract_content(html, url=link)
     html = utils.apply_template(
         "email_template.html",
         {"article_title": title, "article_url": "test_post_html", "article_body": html},
     )
-    html = utils.apply_template(
+    _ = utils.apply_template(
         "email_template_no_inline.html",
-        {"article_title": title, "article_url": "test_post_html"},
+        {
+            "article_title": title,
+            "article_url": "test_post_html",
+            "user_uuid": str(uuid.uuid4()),
+        },
     )
-
-
-# TODO
-# test ingest on a fixed article with feedback links
+    _ = utils.apply_template(
+        "email_template.html",
+        {
+            "article_title": title,
+            "article_url": link,
+            "article_body": html,
+            "user_uuid": str(uuid.uuid4()),
+        },
+    )
