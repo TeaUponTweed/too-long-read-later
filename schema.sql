@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-	user_id TEXT NOT NULL,
+	user_uuid TEXT NOT NULL,
 	email TEXT NOT NULL,
 	confirmed INT NOT NULL,
 	num_articles_per_day INT NOT NULL,
@@ -35,3 +35,4 @@ CREATE TABLE IF NOT EXISTS feedback (
 	FOREIGN KEY(user_id) REFERENCES users(rowid),
 	UNIQUE(article_id, user_id)
 );
+

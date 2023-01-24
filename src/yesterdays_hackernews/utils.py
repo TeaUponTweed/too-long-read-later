@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
+from dataclasses import dataclass
 
 import css_inline
 import markdown
@@ -136,15 +137,21 @@ def get_connection(db_file: Optional[str] = None) -> sqlite3.Connection:
 
 def set_feedback(
     conn: sqlite3.Connection,
-    colname: str,
+    col_name: str,
     article_id: int,
-    user_id: str,
+    user_id: int,
     sentiment: int,
 ):
+    if col_name not in ('sentiment', 'format_quality', 'should_format'):
+        raise ValueError(f"Bad feedback column name {col_name}")
+
     with db.transaction(conn):
         conn.execute(
-            "UPDATE feedback SET ?=? WHERE article_id=? AND user_id=?",
-            (colname, sentiment, article_id, user_id),
+            f"""
+            INSERT INTO feedback(article_id,user_id,{col_name}) VALUES(?,?,?)
+            ON CONFLICT (article_id,user_id) DO UPDATE SET {col_name}=excluded.{col_name}
+            """,
+            (article_id, user_id, sentiment),
         )
 
 
@@ -156,39 +163,80 @@ def confirm(conn: sqlite3.Connection, email: str):
         )
 
 
-def unsubscribe(conn: sqlite3.Connection, user_id: str):
+def unsubscribe(conn: sqlite3.Connection, user_uuid: str):
     with db.transaction(conn):
         conn.execute(
-            "UPDATE users SET num_articles_per_day=? WHERE user_id=?", (0, user_id)
+            "UPDATE users SET num_articles_per_day=? WHERE user_uuid=?", (0, user_uuid)
         )
 
 
 def subscribe(
-    conn: sqlite3.Connection, email: str, user_id: str, num_articles_per_day: int
+    conn: sqlite3.Connection, email: str, user_uuid: str, num_articles_per_day: int
 ):
     with db.transaction(conn):
         conn.execute(
-            """INSERT INTO users(email,user_id,num_articles_per_day, confirmed) VALUES(?,?,?,?)
+            """INSERT INTO users(email,user_uuid,num_articles_per_day, confirmed) VALUES(?,?,?,?)
             ON CONFLICT(email) DO UPDATE SET num_articles_per_day=?;""",
-            (email, user_id, num_articles_per_day, 0, num_articles_per_day),
+            (email, user_uuid, num_articles_per_day, 0, num_articles_per_day),
         )
 
 
-def get_email(conn: sqlite3.Connection, user_id: str) -> Optional[str]:
-    with db.transaction(conn):
-        ret = conn.execute(
-            "SELCT email from users where user_id = ?", user_id
-        ).fetchone()
-    if len(ret):
-        return ret[0]
-    else:
-        return None
+@dataclass
+class UserInfo:
+    email: str
+    row_id: int
+    user_uuid: str
 
+def get_user_info(conn: sqlite3.Connection, user_uuid: Optional[str] = None, row_id: Optional[int] = None, email: Optional[str] = None) -> Optional[UserInfo]:
+    assert any([(user_uuid is not None),(row_id is not None),(email is not None)]), "Need to specify some user info"
+    if user_uuid is not None:
+        with db.transaction(conn):
+            ret = conn.execute(
+                "SELECT email, user_uuid, rowid FROM users WHERE user_uuid = ?", (user_uuid,)
+            ).fetchone()
+        if len(ret):
+            (email, user_uuid, row_id) = ret
+            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
 
-def get_user_id(conn: sqlite3.Connection, email: str) -> Optional[str]:
+    if row_id is not None:
+        with db.transaction(conn):
+            ret = conn.execute(
+                "SELECT email, user_uuid, rowid FROM users WHERE rowid = ?", (row_id,)
+            ).fetchone()
+        if len(ret):
+            (email, user_uuid, row_id) = ret
+            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
+
+    if email is not None:
+        with db.transaction(conn):
+            ret = conn.execute(
+                "SELECT email, user_uuid, rowid FROM users WHERE email = ?", (email,)
+            ).fetchone()
+        if len(ret):
+            (email, user_uuid, row_id) = ret
+            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
+    return None
+
+def get_articles_without_feedback(conn: sqlite3.Connection, date: str, user_row_ids: Optional[List[int]] = None) -> List[Tuple[int,int]]:
+    q = """
+    select articles.rowid as article_id, users.rowid as user_uuid
+    from articles
+    cross join users
+    where article_hn_date = ?
+    and not exists (select * from feedback where articles.rowid = feedback.article_id and users.rowid = feedback.user_id)
+    """
+    # q = """
+    # select articles.rowid, users.rowid
+    # from articles
+    # cross join users
+    # left join feedback on ((feedback.article_id = articles.rowid) and (feedback.user_id = articles.rowid))
+    # where (feedback.article_id is null or feedback.user_id is null)
+    # and article_hn_date = ?
+    # """
     with db.transaction(conn):
-        ret = conn.execute("SELCT user_id from users where email = ?", email).fetchone()
-    if len(ret):
-        return ret[0]
-    else:
-        return None
+        if user_row_ids is not None:
+            q = q + ' and users.rowid in ?'
+            ret = conn.execute(q, (date, tuple(user_row_ids))).fetchall()
+        else:
+            ret = conn.execute(q, (date,)).fetchall()
+    return list(ret)
