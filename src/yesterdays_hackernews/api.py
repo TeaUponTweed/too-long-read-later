@@ -59,9 +59,9 @@ def unsubscribe_route():
 
 @api.route("/confirm")
 def confirm_route():
-    user_uuid = request.args.get("email")
-    if user_uuid is None:
-        return "No user_uuid", 400
+    email = request.args.get("email")
+    if email is None:
+        return "No email", 400
     conn = utils.get_connection()
     utils.confirm(conn=conn, email=email)
     return "Success", 200
@@ -70,8 +70,8 @@ def confirm_route():
 @api.route("/subscribe")
 def subscribe_route():
     email = request.args.get("email")
-    user_uuid = uuid.uuid4()
-    num_emails_per_day = request.args.get("num_emails_per_day")
+    user_uuid = str(uuid.uuid4())
+    num_articles_per_day = request.args.get("num_articles_per_day")
     if num_articles_per_day:
         try:
             num_articles_per_day = int(num_articles_per_day)

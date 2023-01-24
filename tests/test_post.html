@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+
+        <title> The Rock</title>
+
+        <link rel="stylesheet" href="/static/style.css">
+        <meta name="Author" content="Michael Mason" />
+        <meta name="rating" content="SAFE FOR KIDS" />
+        <meta name="Classification" content="Blog" />
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+        <meta name="copyright" content="Michael Mason" />
+        <meta name="Language" content="en-US" />
+        <style type="text/css">
+* { margin: 0; padding: 0; box-sizing: border-box;
+  
+  /* Color scheme */
+  
+  --textcolor: #121212;
+  --bgcolor: #fff;
+  --highlight: #2749c9;
+
+}
+
+@media (prefers-color-scheme: dark) {
+  * {
+    --textcolor: #dadada;
+    --bgcolor: #141414;
+    --highlight: #ffc400;
+  }
+}
+
+body {
+  font-size: 18px;
+  font-family: system-ui, sans-serif;
+  line-height: 1.4;
+  color: var(--textcolor);
+  background: var(--bgcolor);
+  position: relative;
+  max-width: 64em;  /* remove this for a full-width layout */
+  margin: 0 auto;  /* centers the layout */
+}
+
+/* ------- Header ------- */
+
+header {
+  padding: 5vw 5vw 0 5vw;
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+header h1 {
+  font-size: 1em;
+  flex: 1; /* pushes nav to the right */
+  white-space: nowrap;
+  padding: 0 5vw .5em 0;
+}
+
+nav a:not(:last-of-type) {
+  margin-right: 1.5vw;
+}
+
+/* ------- General ------- */
+
+a {
+  text-decoration: none;
+  color: var(--highlight);
+}
+
+a:hover {
+  border-bottom: 1px solid;
+}
+
+section h1 {
+  font-size: 1em;
+  margin: 0 0 1em 0;
+}
+
+h2, h3, h4 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 1.6em 0 .6em 5vw;
+}
+
+p, ul, ol, article {
+  max-width: 60ch; /* Limit line-length to 60 characters */
+  position: relative;
+  margin-left: 5vw;
+  margin-bottom: .6em;
+}
+
+/*ul {
+  list-style-type: none;
+}
+*/
+ul li::marker {
+  content: "\2022   ";
+}
+
+li {
+  margin-bottom: .2em;
+}
+
+ul, ol {
+  padding-left: 2ch;
+}
+
+b, strong {
+  font-weight: 600;
+}
+
+small {
+  font-size: .85em;
+}
+
+hr {
+  height: 1px;
+  border: 0;
+  background: currentColor;
+  opacity: .1;
+  margin: 1.2em 0;
+}
+
+abbr {
+  text-decoration: none;
+}
+
+abbr[title]:hover {
+  opacity: .7;
+  cursor: help;
+}
+
+blockquote {
+  padding-left: 2ch;
+  opacity: .7;
+  margin-bottom: .6em;
+  position: relative;
+}
+
+blockquote:before {
+  content: "";
+  position:absolute;
+  left: 0;
+  top: .3em;
+  bottom: .3em;
+  background: currentColor;
+  width: 1px;
+  opacity: .2;
+}
+
+img, svg, video, audio {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  fill: currentColor;
+}
+  
+code, textarea {
+  font-family: ui-monospace, SF Mono, Menlo, Monaco, Andale Mono, monospace;
+  font-size: 1em;
+  opacity: .7;
+}
+
+a code {
+  opacity:1;
+}
+
+pre, textarea { /* for code samples */
+  font-size: .9em;
+  color: inherit;
+  line-height:inherit;
+  padding:.6em .9em;
+  margin: .8em 0 1em 0;
+  position: relative;
+  display: block;
+  width: 100%;
+  white-space: pre;
+  border:0;
+  border-radius: 4px;
+  background:rgba(255,255,100,.075);
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,.2), inset -1px -1px 0 rgba(0,0,0,.04) ;
+}
+
+/* Inline footnotes */
+
+label {
+  cursor: pointer;
+  vertical-align: super;
+  line-height: 1;
+  font-size: .75em;
+  padding-left: .1em;
+}
+
+label:hover {
+  color: var(--highlight);
+}
+
+label:before {content:"[";}
+label:after {content:"]";}
+
+label + input,
+label + input + small {
+  display: none;
+}
+
+input:checked + small {
+  display: block;
+  padding: .8em 0 1em 2.5vw;;
+}
+
+/* Figures */
+
+figure {
+  margin: 2em 0 1.5em 0;
+}
+
+figure figcaption {
+  margin: 0.8em 0 0 0;
+  font-size: .85em;
+  opacity: .7;
+}
+
+/* Responsive video embeds */
+
+figure.video {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+}
+
+figure.video iframe, figure.video object, figure.video embed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  visibility: hidden; /* so loading="lazy" should work? */
+}
+
+section:target iframe {
+  visibility: visible;
+}
+
+/* External links */
+
+a[href*="//"]:after { 
+  font-weight: 300;
+  font-size: .85em;
+  content: "\2197"; /* top right arrow: ↗ */
+  color: var(--textcolor);
+  opacity: .25;
+}
+
+a[href*="//"]:hover:after {
+  color: var(--highlight);
+  opacity: 1;
+}
+
+/* File links */
+
+a:before { 
+  font-size: .7em;
+  margin-right: .4em;
+}
+
+/* Add more filetypes here if you want */
+
+a[href$=".pdf"]:before { content: "PDF"; }
+a[href$=".txt"]:before { content: "TXT"; }
+a[href$=".mp3"]:before { content: "MP3"; }
+a[href$=".zip"]:before { content: "ZIP"; }
+a[href$=".rar"]:before { content: "RAR"; }
+a[href$=".jpeg"]:before,
+a[href$=".jpg"]:before,
+a[href$=".gif"]:before,
+a[href$=".png"]:before { content: "IMG"; }
+
+        </style>
+    </head>
+    <body>
+    
+    <header>
+      <h1>
+        <a href="#home">M. B. Mason's Blog</a>
+      </h1>
+      <nav>
+        <a href="/#home">Posts</a>
+        <!-- <a href="/#about">About</a> -->
+        <a href="/static/rss.xml" type="application/rss+xml">Feed</a>
+      </nav>
+    </header>
+
+    <main>
+        <h2>Un-caged #7, The Rock, April 21st, 2022, Edited November 22nd, 2022</h2>
+
+<p>The Rock is the chronologically first Nic Cage movie that's generally well known and well regarded.
+This was exciting, but it lead inevitably the cardinal sin of movie watching: having expectations.</p>
+
+<p><strong>Do Not Watch</strong></p>
+
+<p>For those who aren't aware, the plot goes something like:
+Terrorists take over Alcatraz and hold the city of San Francisco under threat of annihilation with chemical weapons.
+Cage is a hot shot bio man.
+Sean Connery, a former SaS agent, has been imprisoned for decades under suspicion of knowing too much.
+He is also the only man to ever break out of Alcatraz and live to tell the tale.
+Inevitably, a three letter agency tap the duo to try and defuse the situation.
+A reverse prison breaks ensues, including firefights, betrayals, and Cage acting scared of glass potpourri.
+Meanwhile, Cage's girlfriend flies out to San Francisco to up the drama; also she's pregnant.
+Eventually the duo manage to save the day by defeating the terrorists and scaring off the retaliatory F16s with a torch.
+Fin.</p>
+
+<p>Thus far in this journey through the cage-lantic, all the best movies have been "quirky".
+Unfortunately, the virtues of a good action movie are different from those of a dry comedy like Moonlight and left me cold.
+As a rock.</p>
+
+    </main>
+    </body>
+</html>
+

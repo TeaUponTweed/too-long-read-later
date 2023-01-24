@@ -4,10 +4,10 @@ import functools
 import os
 import pathlib
 import sqlite3
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
-from dataclasses import dataclass
 
 import css_inline
 import markdown
@@ -84,7 +84,11 @@ def extract_link(url: str) -> Tuple[str, str, List[float]]:
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
     response = requests.get(url, params=query)
-    html = convert_to_absolute_links(url=url, html=response.text)
+    return rextract_link_impl(esponse.text)
+
+
+def extract_link_impl(html: str) -> Tuple[str, str, List[float]]:
+    html = convert_to_absolute_links(url=url, html=html)
     # inline CSS
     html = css_inline.inline(html)
     doc = Document(html, cleaner=_HTML_CLEANER)
@@ -142,7 +146,7 @@ def set_feedback(
     user_id: int,
     sentiment: int,
 ):
-    if col_name not in ('sentiment', 'format_quality', 'should_format'):
+    if col_name not in ("sentiment", "format_quality", "should_format"):
         raise ValueError(f"Bad feedback column name {col_name}")
 
     with db.transaction(conn):
@@ -187,12 +191,21 @@ class UserInfo:
     row_id: int
     user_uuid: str
 
-def get_user_info(conn: sqlite3.Connection, user_uuid: Optional[str] = None, row_id: Optional[int] = None, email: Optional[str] = None) -> Optional[UserInfo]:
-    assert any([(user_uuid is not None),(row_id is not None),(email is not None)]), "Need to specify some user info"
+
+def get_user_info(
+    conn: sqlite3.Connection,
+    user_uuid: Optional[str] = None,
+    row_id: Optional[int] = None,
+    email: Optional[str] = None,
+) -> Optional[UserInfo]:
+    assert any(
+        [(user_uuid is not None), (row_id is not None), (email is not None)]
+    ), "Need to specify some user info"
     if user_uuid is not None:
         with db.transaction(conn):
             ret = conn.execute(
-                "SELECT email, user_uuid, rowid FROM users WHERE user_uuid = ?", (user_uuid,)
+                "SELECT email, user_uuid, rowid FROM users WHERE user_uuid = ?",
+                (user_uuid,),
             ).fetchone()
         if len(ret):
             (email, user_uuid, row_id) = ret
@@ -217,7 +230,10 @@ def get_user_info(conn: sqlite3.Connection, user_uuid: Optional[str] = None, row
             return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
     return None
 
-def get_articles_without_feedback(conn: sqlite3.Connection, date: str, user_row_ids: Optional[List[int]] = None) -> List[Tuple[int,int]]:
+
+def get_articles_without_feedback(
+    conn: sqlite3.Connection, date: str, user_row_ids: Optional[List[int]] = None
+) -> List[Tuple[int, int]]:
     q = """
     select articles.rowid as article_id, users.rowid as user_uuid
     from articles
@@ -235,7 +251,7 @@ def get_articles_without_feedback(conn: sqlite3.Connection, date: str, user_row_
     # """
     with db.transaction(conn):
         if user_row_ids is not None:
-            q = q + ' and users.rowid in ?'
+            q = q + " and users.rowid in ?"
             ret = conn.execute(q, (date, tuple(user_row_ids))).fetchall()
         else:
             ret = conn.execute(q, (date,)).fetchall()
