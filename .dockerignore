@@ -1,4 +1,6 @@
 env/
+python_venv/
+.git/
 aws/
 containers/
-phun_images/
+*.egg-info

@@ -1,0 +1,67 @@
+from datetime import timedelta
+
+import pandas as pd
+import pendulum
+import prefect
+from prefect import schedules
+
+from yesterdays_hackernews import db, utils
+
+# print(schedule.next(5))
+
+
+def ingest_date(url: str, date: str) -> pd.DataFrame:
+    response = requests.get(url, params={"day": date})
+    links_and_title = utils.get_articles_links_and_title(response)
+    rows = []
+    for link, title in links_and_title:
+        _, html, scores = utils.extract_content(
+            utils.get_page_response(link).text, url=link
+        )
+        if len(scores) > 0:
+            readability_rms = math.sqrt(
+                sum(score**2 for score in scores) / len(scores)
+            )
+            readability_sum = sum(scores)
+            readability_mean = sum(scores) / len(scores)
+        else:
+            readability_rms = 0
+            readability_sum = 0
+            readability_mean = 0
+
+        rows.append(
+            {
+                "scrape_date": date,
+                "title": title,
+                "url": link,
+                "content": html,
+                "readability_rms": readability_rms,
+                "readability_sum": readability_sum,
+                "readability_mean": readability_mean,
+                "num_chars": len(html),
+                "num_paragraphs": len(scores),
+            }
+        )
+
+    return pd.DataFrame.from_dict(rows)
+
+
+@prefect.task
+def pipeline():
+    conn = utils.get_connection()
+    url = "https://news.ycombinator.com/front"
+    date = utils.get_yesterday_mt()
+    to_insert_df = ingest_date(url, date)
+    with db.transaction(conn):
+        db.insert_get_id(conn, "articles", to_insert_df)
+
+
+if __name__ == "__main__":
+    clock = schedules.clocks.IntervalClock(
+        start_date=pendulum.datetime(2019, 1, 1, hour=3, tz=utils.MT),
+        interval=timedelta(days=1),
+    )
+    schedule = schedules.Schedule(clocks=[clock])
+    with prefect.Flow("scrape_yesterdays_hackernews", schedule=schedule) as flow:
+        pipeline()
+    flow.run()

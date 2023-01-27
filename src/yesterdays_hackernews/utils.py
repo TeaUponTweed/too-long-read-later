@@ -50,12 +50,6 @@ def hours_since_8am_mt():
     return round(hours_passed)
 
 
-def get_yesterday() -> str:
-    today = datetime.now()
-    yesterday = today - timedelta(days=1)
-    return yesterday.strftime("%Y-%m-%d")
-
-
 _HTML_CLEANER = Cleaner(
     scripts=True,
     javascript=True,
@@ -109,12 +103,12 @@ def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]
     ]
 
 
-@functools.lru_cache(maxsize=1)
-def get_yesterdays_top_ten(yesterday) -> list[tuple[str, str]]:
-    url = "https://news.ycombinator.com/front"
-    response = requests.get(url, params={"day": yesterday})
-    links_and_title = get_articles_links_and_title(response)
-    return links_and_title
+# @functools.lru_cache(maxsize=1)
+# def get_yesterdays_top_ten(yesterday) -> list[tuple[str, str]]:
+#     url = "https://news.ycombinator.com/front"
+#     response = requests.get(url, params={"day": yesterday})
+#     links_and_title = get_articles_links_and_title(response)
+#     return links_and_title
 
 
 def apply_template(template_name: str, context: dict) -> str:
@@ -252,3 +246,11 @@ def get_articles_without_feedback(
         else:
             ret = conn.execute(q, (date,)).fetchall()
     return list(ret)
+
+
+MT = timezone(timedelta(hours=-7))  # Mountain Time is -7 hours from UTC
+
+
+def get_yesterday_mt():
+    yesterday = datetime.now(MT) - timedelta(days=1)
+    return yesterday.strftime("%Y-%m-%d")
