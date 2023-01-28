@@ -1,13 +1,14 @@
+import math
+import time
 from datetime import timedelta
 
 import pandas as pd
 import pendulum
 import prefect
+import requests
 from prefect import schedules
 
 from yesterdays_hackernews import db, utils
-
-# print(schedule.next(5))
 
 
 def ingest_date(url: str, date: str) -> pd.DataFrame:
@@ -31,7 +32,8 @@ def ingest_date(url: str, date: str) -> pd.DataFrame:
 
         rows.append(
             {
-                "scrape_date": date,
+                "article_hn_date": date,
+                "scrape_time": int(time.time()),
                 "title": title,
                 "url": link,
                 "content": html,

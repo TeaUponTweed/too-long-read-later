@@ -103,30 +103,12 @@ def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]
     ]
 
 
-# @functools.lru_cache(maxsize=1)
-# def get_yesterdays_top_ten(yesterday) -> list[tuple[str, str]]:
-#     url = "https://news.ycombinator.com/front"
-#     response = requests.get(url, params={"day": yesterday})
-#     links_and_title = get_articles_links_and_title(response)
-#     return links_and_title
-
-
 def apply_template(template_name: str, context: dict) -> str:
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(template_name)
     return template.render(context)
 
 
-# def get_email_html(link, title):
-#     _, html_output = extract_link(link)
-#     html_output = apply_template(
-#         "email_template.html",
-#         {"article_title": title, "article_url": link, "article_body": html_output},
-#     )
-#     return html_output
-
-
-@functools.cache
 def get_connection(db_file: Optional[str] = None) -> sqlite3.Connection:
     if db_file is None:
         db_file = os.environ["DB_FILE_LOC"]
@@ -184,6 +166,7 @@ class UserInfo:
     email: str
     row_id: int
     user_uuid: str
+    confirmed: bool
 
 
 def get_user_info(
@@ -198,38 +181,55 @@ def get_user_info(
     if user_uuid is not None:
         with db.transaction(conn):
             ret = conn.execute(
-                "SELECT email, user_uuid, rowid FROM users WHERE user_uuid = ?",
+                "SELECT email, user_uuid, rowid, confirmed FROM users WHERE user_uuid = ?",
                 (user_uuid,),
             ).fetchone()
         if len(ret):
-            (email, user_uuid, row_id) = ret
-            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
+            (email, user_uuid, row_id, confirmed) = ret
+            return UserInfo(
+                email=email,
+                user_uuid=user_uuid,
+                row_id=row_id,
+                confirmed=bool(confirmed),
+            )
 
     if row_id is not None:
         with db.transaction(conn):
             ret = conn.execute(
-                "SELECT email, user_uuid, rowid FROM users WHERE rowid = ?", (row_id,)
+                "SELECT email, user_uuid, rowid, confirmed FROM users WHERE rowid = ?",
+                (row_id,),
             ).fetchone()
         if len(ret):
-            (email, user_uuid, row_id) = ret
-            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
+            (email, user_uuid, row_id, confirmed) = ret
+            return UserInfo(
+                email=email,
+                user_uuid=user_uuid,
+                row_id=row_id,
+                confirmed=bool(confirmed),
+            )
 
     if email is not None:
         with db.transaction(conn):
             ret = conn.execute(
-                "SELECT email, user_uuid, rowid FROM users WHERE email = ?", (email,)
+                "SELECT email, user_uuid, rowid, confirmed FROM users WHERE email = ?",
+                (email,),
             ).fetchone()
         if len(ret):
-            (email, user_uuid, row_id) = ret
-            return UserInfo(email=email, user_uuid=user_uuid, row_id=row_id)
+            (email, user_uuid, row_id, confirmed) = ret
+            return UserInfo(
+                email=email,
+                user_uuid=user_uuid,
+                row_id=row_id,
+                confirmed=bool(confirmed),
+            )
     return None
 
 
 def get_articles_without_feedback(
-    conn: sqlite3.Connection, date: str, user_row_ids: Optional[List[int]] = None
+    conn: sqlite3.Connection, date: str
 ) -> List[Tuple[int, int]]:
     q = """
-    select articles.rowid as article_id, users.rowid as user_uuid
+    select articles.rowid as article_id, users.rowid as user_id
     from articles
     cross join users
     where article_hn_date = ?
@@ -240,11 +240,7 @@ def get_articles_without_feedback(
     )
     """
     with db.transaction(conn):
-        if user_row_ids is not None:
-            q = q + " and users.rowid in ?"
-            ret = conn.execute(q, (date, tuple(user_row_ids))).fetchall()
-        else:
-            ret = conn.execute(q, (date,)).fetchall()
+        ret = conn.execute(q, (date,)).fetchall()
     return list(ret)
 
 

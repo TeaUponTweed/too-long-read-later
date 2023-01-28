@@ -56,8 +56,7 @@ def ingest_hn_date(db_file: str, date: str):
 
 def init_db_impl(db_file: str, schema_file: str) -> str:
     conn = utils.get_connection(db_file)
-    with db.transaction(conn):
-        conn.execute("pragma journal_mode=wal")
+    conn.execute("pragma journal_mode=wal")
     with open(schema_file) as fi:
         schema = fi.read()
         with db.transaction(conn):
@@ -71,6 +70,22 @@ def init_db_impl(db_file: str, schema_file: str) -> str:
 def init_db(db_file: str, schema_file: str):
     schema = init_db_impl(db_file=db_file, schema_file=schema_file)
     print(schema)
+
+
+@cli.command("test-send")
+@click.option("-d", "--db-file", required=True, type=str)
+@click.option("-e", "--email", "allowed_email", required=True, type=str)
+def test_send(db_file: str, allowed_email: str):
+    schema = init_db_impl(db_file=db_file, schema_file=schema_file)
+    for email, title, content, article_id, user_id in gen_emails_to_send():
+        if email != allowed_email:
+            continue
+        send_mesage(email, f"Hacker News: '{title}'", content)
+        with db.transaction(conn):
+            conn.execute(
+                "insert into feedback(user_id,article_id) values (?,?)",
+                (user_id, article_id),
+            )
 
 
 if __name__ == "__main__":

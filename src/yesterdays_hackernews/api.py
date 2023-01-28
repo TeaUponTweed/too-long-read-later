@@ -1,11 +1,13 @@
 import functools
 import sqlite3
+import urllib
 import uuid
 from typing import Optional
 
-from flask import Flask, request
+from flask import Flask, request, send_file, send_from_directory
 
 from yesterdays_hackernews import utils
+from yesterdays_hackernews.send import send_mesage
 
 api = Flask(__name__)
 
@@ -70,8 +72,7 @@ def confirm_route():
 
 @api.route("/subscribe")
 def subscribe_route():
-    email = request.args.get("email")
-    user_uuid = str(uuid.uuid4())
+    email = request.args.get("email").lower()
     num_articles_per_day = request.args.get("num_articles_per_day")
     if num_articles_per_day:
         try:
@@ -82,20 +83,42 @@ def subscribe_route():
     if num_articles_per_day is None:
         num_articles_per_day = 10
 
-    if user_uuid is None:
-        return "No user_uuid", 400
-
     if email is None:
         return "No email", 400
 
     conn = utils.get_connection()
+    user_info = utils.get_user_info(conn=conn, email=email)
+    if user_info is None:
+        user_uuid = str(uuid.uuid4())
+    else:
+        user_uuid = user_info.user_uuid
     utils.subscribe(
         conn=conn,
         email=email,
         user_uuid=user_uuid,
         num_articles_per_day=num_articles_per_day,
     )
-    return "Success", 200
+    if user_info is None or not user_info.confirmed:
+        confirm_url = "news.derivativeworks.co/confirm?" + urllib.parse.urlencode(
+            {
+                "user_uuid": str(user_uuid),
+            }
+        )
+        msg = f"""
+        <a href="{confirm_url}"> Please follow this URL to confirm email.</a>
+        <br>
+        <p>
+            You can update news prefereces by visiting news.derivativeworks.co
+        </p>
+        """
+        send_mesage(
+            to=email,
+            subject="Please Confirm Email For news.derivativeworks.co",
+            msg=msg,
+        )
+        return "Success. Please confirm your email.", 200
+    else:
+        return "Success. Prefereces updated", 200
 
 
 @api.route("/")

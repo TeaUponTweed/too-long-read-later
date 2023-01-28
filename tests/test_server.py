@@ -1,5 +1,6 @@
 import os
 import pathlib
+import random
 import time
 import urllib
 import uuid
@@ -8,7 +9,7 @@ from typing import List
 import pandas as pd
 import pytest
 
-from yesterdays_hackernews import cli, db, utils
+from yesterdays_hackernews import cli, db, sender, utils
 from yesterdays_hackernews.api import api
 
 
@@ -73,7 +74,7 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
             {
                 "email": "asd4@asd.asd",
                 "confirmed": 1,
-                "num_articles_per_day": 1,
+                "num_articles_per_day": 13,
             },
             {
                 "email": "asd5@asd.asd",
@@ -83,16 +84,21 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
         ]
     )
     for _, row in user_df.iterrows():
-        sub_url = "/subscribe?" + urllib.parse.urlencode(
+        subscibe_url = "/subscribe?" + urllib.parse.urlencode(
             {
                 "email": str(row.email),
                 "num_articles_per_day": int(row.num_articles_per_day),
             }
         )
-        response = api.test_client().get(sub_url)
+        response = api.test_client().get(subscibe_url)
         assert response.status_code == 200
         if row.confirmed:
-            response = api.test_client().get(f"/confirm?email={row.email}")
+            confirm_url = "/confirm?" + urllib.parse.urlencode(
+                {
+                    "email": str(row.email),
+                }
+            )
+            response = api.test_client().get(confirm_url)
             assert response.status_code == 200
             with db.transaction(conn):
                 (confirmed,) = conn.execute(
@@ -117,9 +123,8 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
 def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
     # feedback
     conn = utils.get_connection(str(db_loc))
-    articles_and_users = utils.get_articles_without_feedback(
-        conn=conn, date="2020-01-01"
-    )
+    date = "2020-01-01"
+    articles_and_users = utils.get_articles_without_feedback(conn=conn, date=date)
     these_article_ids, these_user_ids = map(
         lambda x: sorted(set(x)), zip(*articles_and_users)
     )
@@ -144,11 +149,15 @@ def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
                     assert response.status_code == 200
                     assert ret[0] == sentiment
 
-    other_articles_and_users = utils.get_articles_without_feedback(
-        conn=conn, date="2020-01-01"
-    )
+    other_articles_and_users = utils.get_articles_without_feedback(conn=conn, date=date)
     assert len(other_articles_and_users) == (num_articles_per_day - 5) * len(user_ids)
 
+    emails = list(sender.gen_emails_to_send(date=date))
+    assert len(emails) == 2
+    assert sorted([emails[0][0], emails[1][0]]) == [
+        "asd4@asd.asd",
+        "asd5@asd.asd",
+    ]
     # updating article number
     user_info = utils.get_user_info(conn=conn, row_id=user_ids[-1])
     with db.transaction(conn):
