@@ -95,6 +95,11 @@ def gen_emails_to_send(
 @prefect.task
 def pipeline():
     conn = utils.get_connection()
+    ix = utils.hours_since_8am_mt()
+    if not (1 <= ix <= 12):
+        print("Only works between 9AM and 8PM")
+        return
+
     for email, title, content, article_id, user_id in gen_emails_to_send():
         send_mesage(email, f"Hacker News: '{title}'", content)
         with db.transaction(conn):
