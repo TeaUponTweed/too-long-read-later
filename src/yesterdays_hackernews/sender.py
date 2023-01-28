@@ -31,6 +31,7 @@ def _prepare_email(
                 "article_url": article_url,
                 "article_body": article_content_html,
                 "user_uuid": user_info.user_uuid,
+                "article_id": article_id,
             },
         )
     else:
@@ -40,6 +41,7 @@ def _prepare_email(
                 "article_title": article_title,
                 "article_url": article_url,
                 "user_uuid": user_info.user_uuid,
+                "article_id": article_id,
             },
         )
     return article_title, html, article_id
@@ -58,22 +60,24 @@ def gen_emails_to_send(
         to_send_user_ids = conn.execute(
             """
             with send_count as (
-            select user_id,count(*) as num_sent
-            from feedback
-            join articles on articles.rowid = feedback.article_id
-            where articles.article_hn_date = ?
-            group by user_id
+                select user_id,count(*) as num_sent
+                from feedback
+                join articles on articles.rowid = feedback.article_id
+                where articles.article_hn_date = ?
+                group by user_id
             )
-            select users.rowid,email from users
+            select users.rowid,users.email from users
             left join send_count on users.rowid = send_count.user_id
-            where users.confirmed and (send_count.num_sent < users.num_articles_per_day)
+            where users.confirmed and ((send_count.num_sent < users.num_articles_per_day) or send_count.num_sent is null)
         """,
             (date,),
-        )
+        ).fetchall()
     to_send_user_ids = dict(to_send_user_ids)
     paired_ids = utils.get_articles_without_feedback(conn, date)
-    if len(paired_ids) == 0 and to_send_user_ids > 0:
-        print("WARNL failed to find any articles to send!")
+    if len(paired_ids) == 0 and len(to_send_user_ids) > 0:
+        print("WARN: failed to find any articles to send!")
+        return
+
     for user_id, ids in itertools.groupby(
         sorted(paired_ids, key=lambda x: x[1]), key=lambda x: x[1]
     ):
@@ -90,6 +94,7 @@ def gen_emails_to_send(
 
 @prefect.task
 def pipeline():
+    conn = utils.get_connection()
     for email, title, content, article_id, user_id in gen_emails_to_send():
         send_mesage(email, f"Hacker News: '{title}'", content)
         with db.transaction(conn):

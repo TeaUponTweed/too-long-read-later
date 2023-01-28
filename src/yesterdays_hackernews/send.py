@@ -44,7 +44,9 @@ def _get_server() -> Iterator[smtplib.SMTP]:
 def send_mesage(to: str, subject: str, msg: str, from_address: Optional[str] = None):
     if from_address is None:
         from_address = os.environ["EMAIL_ADDRESS"]
-
+    if from_address == "TEST_DO_NOT_SEND":
+        print("Not sending. from from_address == 'TEST_DO_NOT_SEND'")
+        return
     msg = create_message(
         receiver=to, subject=subject, contents_html=msg, sender=from_address
     )

@@ -184,7 +184,7 @@ def get_user_info(
                 "SELECT email, user_uuid, rowid, confirmed FROM users WHERE user_uuid = ?",
                 (user_uuid,),
             ).fetchone()
-        if len(ret):
+        if ret is not None and len(ret) > 0:
             (email, user_uuid, row_id, confirmed) = ret
             return UserInfo(
                 email=email,
@@ -199,7 +199,7 @@ def get_user_info(
                 "SELECT email, user_uuid, rowid, confirmed FROM users WHERE rowid = ?",
                 (row_id,),
             ).fetchone()
-        if len(ret):
+        if ret is not None and len(ret) > 0:
             (email, user_uuid, row_id, confirmed) = ret
             return UserInfo(
                 email=email,
@@ -214,7 +214,7 @@ def get_user_info(
                 "SELECT email, user_uuid, rowid, confirmed FROM users WHERE email = ?",
                 (email,),
             ).fetchone()
-        if len(ret):
+        if ret is not None and len(ret) > 0:
             (email, user_uuid, row_id, confirmed) = ret
             return UserInfo(
                 email=email,

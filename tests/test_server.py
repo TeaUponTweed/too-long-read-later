@@ -23,6 +23,7 @@ def db_loc(tmpdir: pathlib.Path) -> pathlib.Path:
     schema_loc = pathlib.Path(__file__).parent.resolve() / ".." / "schema.sql"
     cli.init_db_impl(db_file=tmpdir / "news.db", schema_file=schema_loc)
     os.environ["DB_FILE_LOC"] = str(tmpdir / "news.db")
+    os.environ["EMAIL_ADDRESS"] = "TEST_DO_NOT_SEND"
     return tmpdir / "news.db"
 
 
@@ -92,10 +93,11 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
         )
         response = api.test_client().get(subscibe_url)
         assert response.status_code == 200
+        user_info = utils.get_user_info(conn=conn, email=row.email)
         if row.confirmed:
             confirm_url = "/confirm?" + urllib.parse.urlencode(
                 {
-                    "email": str(row.email),
+                    "user_uuid": str(user_info.user_uuid),
                 }
             )
             response = api.test_client().get(confirm_url)
@@ -199,7 +201,12 @@ def test_ingest(db_loc: pathlib.Path):
     title, summary, content = utils.extract_content(html, url=link)
     html = utils.apply_template(
         "email_template.html",
-        {"article_title": title, "article_url": "test_post_html", "article_body": html},
+        {
+            "article_title": title,
+            "article_url": "test_post_html",
+            "article_body": html,
+            "article_id": -1,
+        },
     )
     _ = utils.apply_template(
         "email_template_no_inline.html",
@@ -207,6 +214,7 @@ def test_ingest(db_loc: pathlib.Path):
             "article_title": title,
             "article_url": "test_post_html",
             "user_uuid": str(uuid.uuid4()),
+            "article_id": -1,
         },
     )
     _ = utils.apply_template(
@@ -216,5 +224,6 @@ def test_ingest(db_loc: pathlib.Path):
             "article_url": link,
             "article_body": html,
             "user_uuid": str(uuid.uuid4()),
+            "article_id": -1,
         },
     )

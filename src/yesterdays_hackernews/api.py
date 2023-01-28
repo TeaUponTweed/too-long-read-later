@@ -62,17 +62,21 @@ def unsubscribe_route():
 
 @api.route("/confirm")
 def confirm_route():
-    email = request.args.get("email")
-    if email is None:
-        return "No email", 400
+    user_uuid = request.args.get("user_uuid")
+    if user_uuid is None:
+        return "No user_uuid", 400
     conn = utils.get_connection()
-    utils.confirm(conn=conn, email=email)
-    return "Success", 200
+    user_info = utils.get_user_info(conn=conn, user_uuid=user_uuid)
+    if user_info is not None:
+        utils.confirm(conn=conn, email=user_info.email)
+        return "Success", 200
+    else:
+        return "Unrecognized user_uuid", 400
 
 
 @api.route("/subscribe")
 def subscribe_route():
-    email = request.args.get("email").lower()
+    email = request.args.get("email")
     num_articles_per_day = request.args.get("num_articles_per_day")
     if num_articles_per_day:
         try:
@@ -85,6 +89,8 @@ def subscribe_route():
 
     if email is None:
         return "No email", 400
+
+    email = email.lower()
 
     conn = utils.get_connection()
     user_info = utils.get_user_info(conn=conn, email=email)
@@ -132,4 +138,4 @@ def send_static(path):
 
 
 if __name__ == "__main__":
-    api.run()
+    api.run(host="0.0.0.0", port=5001)

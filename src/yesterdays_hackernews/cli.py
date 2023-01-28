@@ -26,6 +26,7 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool):
             "email_template.html",
             {
                 "article_title": title,
+                "article_id": -1,
                 "article_url": link,
                 "article_body": html,
                 "user_uuid": user_uuid,
@@ -36,6 +37,7 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool):
             "email_template_no_inline.html",
             {
                 "article_title": title,
+                "article_id": -1,
                 "article_url": link,
                 "user_uuid": user_uuid,
             },
