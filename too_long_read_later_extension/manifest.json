@@ -1,0 +1,13 @@
+{
+  "name": "Too Long, Read Later",
+  "description": "Send a copy of a website to your inbox!",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["notifications", "tabs", "identity.email"],
+  "icons": {
+      "128": "images/tlrl.png"
+  }
+}
