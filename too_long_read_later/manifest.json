@@ -3,10 +3,16 @@
   "description": "Send a copy of a website to your inbox!",
   "version": "1.0",
   "manifest_version": 3,
+  "action": {
+    "default_title": "Too long, didn't red"
+  },
+  "host_permissions": [
+      "https://news.derivativeworks.co/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["notifications", "tabs", "identity.email"],
+  "permissions": ["notifications", "activeTab", "identity", "identity.email"],
   "icons": {
       "128": "images/tlrl.png"
   }

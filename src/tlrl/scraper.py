@@ -1,6 +1,7 @@
 import math
 import time
 from datetime import timedelta
+from typing import Optional
 
 import pandas as pd
 import pendulum
@@ -11,39 +12,41 @@ from prefect import schedules
 from tlrl import db, utils
 
 
+def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
+    inferred_title, html, scores = utils.extract_content(
+        utils.get_page_response(link).text, url=link
+    )
+    if title is None:
+        title = inferred_title
+    if len(scores) > 0:
+        readability_rms = math.sqrt(sum(score**2 for score in scores) / len(scores))
+        readability_sum = sum(scores)
+        readability_mean = sum(scores) / len(scores)
+    else:
+        readability_rms = 0
+        readability_sum = 0
+        readability_mean = 0
+
+    return {
+        "article_hn_date": date,
+        "scrape_time": int(time.time()),
+        "title": title,
+        "url": link,
+        "content": html,
+        "readability_rms": readability_rms,
+        "readability_sum": readability_sum,
+        "readability_mean": readability_mean,
+        "num_chars": len(html),
+        "num_paragraphs": len(scores),
+    }
+
+
 def ingest_date(url: str, date: str) -> pd.DataFrame:
     response = requests.get(url, params={"day": date})
     links_and_title = utils.get_articles_links_and_title(response)
     rows = []
     for link, title in links_and_title:
-        _, html, scores = utils.extract_content(
-            utils.get_page_response(link).text, url=link
-        )
-        if len(scores) > 0:
-            readability_rms = math.sqrt(
-                sum(score**2 for score in scores) / len(scores)
-            )
-            readability_sum = sum(scores)
-            readability_mean = sum(scores) / len(scores)
-        else:
-            readability_rms = 0
-            readability_sum = 0
-            readability_mean = 0
-
-        rows.append(
-            {
-                "article_hn_date": date,
-                "scrape_time": int(time.time()),
-                "title": title,
-                "url": link,
-                "content": html,
-                "readability_rms": readability_rms,
-                "readability_sum": readability_sum,
-                "readability_mean": readability_mean,
-                "num_chars": len(html),
-                "num_paragraphs": len(scores),
-            }
-        )
+        rows.append(ingest_impl(link=link, date=date, title=title))
 
     return pd.DataFrame.from_dict(rows)
 

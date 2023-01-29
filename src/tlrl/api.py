@@ -4,12 +4,66 @@ import urllib
 import uuid
 from typing import Optional
 
-from flask import Flask, request, send_file, send_from_directory
+import pandas as pd
+from flask import Flask, jsonify, request, send_file, send_from_directory
 
-from tlrl import utils
+from tlrl import db, utils
+from tlrl.scraper import ingest_impl
 from tlrl.send import send_mesage
+from tlrl.sender import _prepare_email
 
 api = Flask(__name__)
+
+
+@api.route("/tlrl", methods=["POST"])
+def tlrl():
+    data = request.get_json()
+    if "url" in data:
+        url = data["url"]
+    else:
+        return jsonify(error="url is required"), 400
+
+    email = data["email"]
+    if "email" in data:
+        email = data["email"]
+    else:
+        return jsonify(error="email is required"), 400
+
+    # url = request.args.get("url")
+    # email = request.args.get("email")
+    # if email is None:
+    #     return "No email provided", 400
+    # if url is None:
+    #     return "No url provided", 400
+
+    if len(email) == 0:
+        return jsonify(error="Email is null. Are you signed in?"), 400
+
+    url = urllib.parse.unquote(url)
+
+    conn = utils.get_connection()
+    user_info = utils.get_user_info(conn=conn, email=email)
+    if user_info is None:
+        return "Unknown email", 400
+    # get content
+    df = pd.DataFrame.from_dict([ingest_impl(link=url, date="TLRL-ADHOC")])
+    # add to database
+    with db.transaction(conn):
+        (article_id,) = db.insert_get_id(conn, "articles", df)
+    if article_id == 0:
+        with db.transaction(conn):
+            (article_id,) = conn.execute(
+                "select rowid from articles where url = ? and article_hn_date = ?",
+                (url, "TLRL-ADHOC"),
+            ).fetchone()
+
+        print("article_id", article_id)
+    # send
+    article_title, email_content, _ = _prepare_email(
+        user_id=user_info.row_id, article_ids=[article_id]
+    )
+    send_mesage(email, f"Hacker News: '{article_title}'", email_content)
+    return jsonify(status="success", url=url, email=email), 200
 
 
 @api.route("/feedback/<col_name>")
