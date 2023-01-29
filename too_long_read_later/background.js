@@ -3,7 +3,7 @@
 chrome.action.onClicked.addListener((tab) => {
   chrome.identity.getProfileUserInfo({accountStatus: 'ANY'},(userInfo) => {
     var encodedUrl = encodeURIComponent(tab.url);
-    fetch('news.derivativeworks.co/tlrl', {
+    fetch('https://news.derivativeworks.co/tlrl', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

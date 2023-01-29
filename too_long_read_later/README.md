@@ -2,3 +2,7 @@ Developed following [this tutorial](https://developer.chrome.com/docs/extensions
 To distribute (following [this](https://developer.chrome.com/docs/webstore/update/#upgrade-your-item))
 - Go to https://chrome.google.com/u/2/webstore/devconsole/
 - Zip new release (`make publish`)
+
+```
+chrome://extensions/
+```

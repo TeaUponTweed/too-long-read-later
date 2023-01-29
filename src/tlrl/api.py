@@ -56,8 +56,6 @@ def tlrl():
                 "select rowid from articles where url = ? and article_hn_date = ?",
                 (url, "TLRL-ADHOC"),
             ).fetchone()
-
-        print("article_id", article_id)
     # send
     article_title, email_content, _ = _prepare_email(
         user_id=user_info.row_id, article_ids=[article_id]
