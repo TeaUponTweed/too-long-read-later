@@ -6,8 +6,8 @@ import click
 import pandas as pd
 import requests
 
-from yesterdays_hackernews import db, utils
-from yesterdays_hackernews.scraper import ingest_date
+from tlrl import db, utils
+from tlrl.scraper import ingest_date
 
 
 @click.group()

@@ -5,8 +5,8 @@ from typing import Iterator, List, Optional, Tuple
 
 import prefect
 
-from yesterdays_hackernews import db, utils
-from yesterdays_hackernews.send import send_mesage
+from tlrl import db, utils
+from tlrl.send import send_mesage
 
 
 def _prepare_email(
@@ -112,6 +112,6 @@ def pipeline():
 if __name__ == "__main__":
     # check 5 minutes past the hour
     schedule = prefect.schedules.CronSchedule(cron="5 * * * *")
-    with prefect.Flow("yesterdays_hackernews", schedule=schedule) as flow:
+    with prefect.Flow("tlrl-sender", schedule=schedule) as flow:
         pipeline()
     flow.run()

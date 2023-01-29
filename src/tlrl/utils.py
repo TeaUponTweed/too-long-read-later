@@ -18,7 +18,7 @@ from jinja2 import Environment, FileSystemLoader
 from lxml.html.clean import Cleaner
 from readability import Document
 
-from yesterdays_hackernews import db
+from tlrl import db
 
 
 def convert_to_absolute_links(url: str, html: str) -> str:

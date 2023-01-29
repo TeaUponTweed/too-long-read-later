@@ -9,8 +9,8 @@ from typing import List
 import pandas as pd
 import pytest
 
-from yesterdays_hackernews import cli, db, sender, utils
-from yesterdays_hackernews.api import api
+from tlrl import cli, db, sender, utils
+from tlrl.api import api
 
 
 @pytest.fixture

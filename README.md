@@ -1,7 +1,8 @@
 # Overview
 Sends the top 10 of yesterdays hackernews stories directly to your inbox.
-Uses sqlite as a database. See shema.sql for details.
-Currently configured to send up to one email per hour between 9AM MT and 8PM MT.
+This involves extracting the "content" from the webposts and translating them into email/
+Uesrs and articles are stored in a sqlite database. See shema.sql for details.
+The system is currently running at news.derivativeworks.co and configured to send up to one email per hour between 9AM MT and 8PM MT.
 
 # Installation
 ```bash
@@ -26,11 +27,12 @@ See [this post](https://kinsta.com/blog/gmail-smtp-server/) for information.
 Finally, you need to set `DB_FILE_LOC` to a location with an already initialized sqlite database.
 You can run
 ```bash
-$ python src/yesterdays_hackernews/cli.py init -d path/to/news.db -s schema.sql
+$ python src/tlrl/cli.py init -d path/to/news.db -s schema.sql
 ```
 To initialize the database
 
 # Roadmap
+Eventually I would like use these scraping utilities into a chrome extension, similar to pocket but using email, which I actually check.
 
 TODO
 - allow people to undo feedback

@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -e python-readability
 
 ENV PYTHONUNBUFFERED=.
 
-ENTRYPOINT [ "python3", "src/yesterdays_hackernews/sender.py" ]
+ENTRYPOINT [ "python3", "src/tlrl/sender.py" ]

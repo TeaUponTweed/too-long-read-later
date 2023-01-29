@@ -4,8 +4,8 @@ import urllib
 
 import pytest
 
-from yesterdays_hackernews import api, cli, db, utils
-from yesterdays_hackernews.scraper import pipeline
+from tlrl import api, cli, db, utils
+from tlrl.scraper import pipeline
 
 
 @pytest.fixture

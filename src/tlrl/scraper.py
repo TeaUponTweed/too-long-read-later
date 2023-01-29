@@ -8,7 +8,7 @@ import prefect
 import requests
 from prefect import schedules
 
-from yesterdays_hackernews import db, utils
+from tlrl import db, utils
 
 
 def ingest_date(url: str, date: str) -> pd.DataFrame:
@@ -64,6 +64,6 @@ if __name__ == "__main__":
         interval=timedelta(days=1),
     )
     schedule = schedules.Schedule(clocks=[clock])
-    with prefect.Flow("scrape_yesterdays_hackernews", schedule=schedule) as flow:
+    with prefect.Flow("scrape_tlrl", schedule=schedule) as flow:
         pipeline()
     flow.run()

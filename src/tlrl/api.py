@@ -6,8 +6,8 @@ from typing import Optional
 
 from flask import Flask, request, send_file, send_from_directory
 
-from yesterdays_hackernews import utils
-from yesterdays_hackernews.send import send_mesage
+from tlrl import utils
+from tlrl.send import send_mesage
 
 api = Flask(__name__)
 

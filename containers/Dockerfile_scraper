@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -e python-readability
 
 ENV PYTHONUNBUFFERED=.
 
-ENTRYPOINT [ "python3", "src/yesterdays_hackernews/scraper.py" ]
+ENTRYPOINT [ "python3", "src/tlrl/scraper.py" ]

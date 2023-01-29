@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -e python-readability
 
 ENV PYTHONUNBUFFERED=.
 
-ENTRYPOINT [ "gunicorn", "-b", "0.0.0.0:6666", "yesterdays_hackernews.api:api"]
+ENTRYPOINT [ "gunicorn", "-b", "0.0.0.0:6666", "tlrl.api:api"]
