@@ -1,50 +1,44 @@
+# Overview
 Sends the top 10 of yesterdays hackernews stories directly to your inbox.
-TODO
-- setup sender to send N random emails
-	- only to confirmed emails
-- allow people to undo feedback
-- populate users in database using form
-- get score as a feature
+Uses sqlite as a database. See shema.sql for details.
+Currently configured to send up to one email per hour between 9AM MT and 8PM MT.
 
+# Installation
 ```bash
+# install dependencies
+pip install -r requirements.txt
+pip install -e .
+# install dev dependencies
 pip install -r dev-requirements
+# if dependencies change, update requirements.txt
 pip-compile
-pip-compile -o requirements_extras.txt --extra python-readability
 ```
 
-```sql
-with send_count as (
-select user_id,count(*) as num_sent
-from feedback
-join articles on articles.rowid = feedback.article_id
-where articles.article_hn_date = ?
-group by user_id
-)
-select email from users where confirmed and num_articles
-left join send_count on users.rowid = send_count.user_id
-where send_count.num_sent < users.num_articles_per_day
-```
+# Running
+This assumes you will setup 3 services:
+- scraper, runs once a day and gets hackew news articles from previous day
+- send, runs hourly and sends emails to subscribers
+- server, hosts signup page and provides a REST api for feedback, subscriptions, etc.
 
-```sql
-    with send_count as (
-        select user_id,count(*) as num_sent
-        from feedback
-        join articles on feedback.article_id = articles.rowid
-        where articles.date = ?
-        group by user_id
-    ), active_users as (
-        select users.rowid as user_id, users.email from users
-        left join send_count on send_count.user_id = users.rowid
-        where send_count.num_sent < num_articles_per_day
-        and users.confirmed
-    )
-    select articles.rowid as article_id, users.rowid as user_uuid
-    from articles
-    cross join active_users
-    where article_hn_date = ?
-    and not exists (
-        select * from feedback
-        where articles.rowid = feedback.article_id
-        and active_users.rowid = feedback.user_id
-    )
+To send emails, you need to set `EMAIL_ADDRESS` to a valid gmail you control and `GMAIL_SMTP_PW` to the appropriate string.
+See [this post](https://kinsta.com/blog/gmail-smtp-server/) for information.
+
+Finally, you need to set `DB_FILE_LOC` to a location with an already initialized sqlite database.
+You can run
+```bash
+$ python src/yesterdays_hackernews/cli.py init -d path/to/news.db -s schema.sql
 ```
+To initialize the database
+
+# Roadmap
+
+TODO
+- allow people to undo feedback
+- get hn score as a feature
+- open email -> db
+- click link -> db
+- better feedback ux (currently opens a new tab with no content)
+- "should inline" model
+- develop a chrome extension
+- more configurable article times
+
