@@ -1,7 +1,7 @@
 # Overview
 Sends the top 10 of yesterdays hackernews stories directly to your inbox.
-This involves extracting the "content" from the webposts and translating them into email/
-Uesrs and articles are stored in a sqlite database. See shema.sql for details.
+This involves extracting the "content" from the posts and translating them into email.
+Users and articles are stored in a sqlite database. See schema.sql for details.
 The system is currently running at news.derivativeworks.co and configured to send up to one email per hour between 9AM MT and 8PM MT.
 
 # Installation
@@ -17,7 +17,7 @@ pip-compile
 
 # Running
 This assumes you will setup 3 services:
-- scraper, runs once a day and gets hackew news articles from previous day
+- scraper, runs once a day and gets hackewnews articles from previous day
 - send, runs hourly and sends emails to subscribers
 - server, hosts signup page and provides a REST api for feedback, subscriptions, etc.
 
@@ -40,7 +40,10 @@ TODO
 - open email -> db
 - click link -> db
 - better feedback ux (currently opens a new tab with no content)
-- "should inline" model
-- develop a chrome extension
+- "should inline" model (a threshold on readability RMS seems good)
 - more configurable article times
-
+- apostrophe bug https://blog.jcoglan.com/2017/05/08/merging-with-diff3/ we've ->weâ€™ve
+- improve landing page to make it look nicer and link to extension once it's published
+- update extension publish version to 1.1
+	- make icon easier to see
+	- provide feedback that the email was sent successfully or if not (alert for both is fine)

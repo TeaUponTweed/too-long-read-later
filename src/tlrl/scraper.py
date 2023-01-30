@@ -18,12 +18,12 @@ def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
             utils.get_page_response(link).text, url=link
         )
     except Exception as e:
-        print(f"ERR Failed to scrape {link}. Failed with error: {str(s)}")
+        print(f"ERR Failed to scrape {link}. Failed with error: {str(e)}")
         return {
             "article_hn_date": date,
             "scrape_time": int(time.time()),
             "title": title,
-            "url": date,
+            "url": link,
             "content": None,
             "readability_rms": None,
             "readability_sum": None,
