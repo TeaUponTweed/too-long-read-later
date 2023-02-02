@@ -12,10 +12,12 @@ from prefect import schedules
 from tlrl import db, utils
 
 
-def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
+
+def ingest_impl(link: str, date: str, title: Optional[str] = None, article_score: Optional[int] =None) -> dict:
     try:
+        response = utils.get_page_response(link)
         inferred_title, html, scores = utils.extract_content(
-            utils.get_page_response(link).text, url=link
+            response.text, url=link
         )
     except Exception as e:
         print(f"ERR Failed to scrape {link}. Failed with error: {str(e)}")
@@ -30,6 +32,7 @@ def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
             "readability_mean": None,
             "num_chars": None,
             "num_paragraphs": None,
+            "score": article_score,
         }
     else:
         if title is None:
@@ -56,17 +59,18 @@ def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
             "readability_mean": readability_mean,
             "num_chars": len(html),
             "num_paragraphs": len(scores),
+            "score": article_score,
         }
 
 
 def ingest_date(url: str, date: str) -> pd.DataFrame:
     response = requests.get(url, params={"day": date}, timeout=30)
-    links_and_title = utils.get_articles_links_and_title(response)
-    print(f'INFO: scraping {len(links_and_title)} links.')
+    article_info = utils.get_article_info(response)
+    print(f'INFO: scraping {len(article_info)} links.')
     rows = []
-    for link, title in links_and_title:
-        print(f'INFO: scraping url={link} title={title}')
-        rows.append(ingest_impl(link=link, date=date, title=title))
+    for link, title, article_score in article_info:
+        print(f'INFO: scraping url={link} title={title} score={article_score}')
+        rows.append(ingest_impl(link=link, date=date, title=title, article_score=article_score))
 
     return pd.DataFrame.from_dict(rows)
 

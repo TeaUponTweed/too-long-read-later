@@ -94,12 +94,22 @@ def extract_content(html: str, url: str) -> Tuple[str, str, List[float]]:
     )
 
 
-def get_articles_links_and_title(response: requests.Response) -> tuple[str, str]:
+def get_article_info(response: requests.Response) -> tuple[str, str, int]:
     soup = BeautifulSoup(response.text, "html.parser")
     title_lines = soup.find_all("span", class_="titleline")
     links = [line.find("a") for line in title_lines]
+    scores = []
+    # get scores
+    for subtext in soup.find_all("td", class_="subtext"):
+        score = subtext.find("span", class_="score").text.strip().replace(" points", "")
+        scores.append(int(score))
+
+    if len(scores) != len(links):
+        print("WARN: scraped scores did not align with articles")
+        scores = [None for _ in range(len(links))]
+
     return [
-        (link["href"], link.string) for link in links if link["href"].startswith("http")
+        (link["href"], link.string, score) for score,link in zip(scores, links) if link["href"].startswith("http")
     ]
 
 

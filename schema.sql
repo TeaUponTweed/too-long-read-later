@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS articles (
 	readability_mean REAL,
 	num_chars INT,
 	num_paragraphs INT,
+	score INT,
 
 	UNIQUE(article_hn_date, url)
 );
