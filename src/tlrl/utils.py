@@ -71,13 +71,13 @@ _HTML_CLEANER = Cleaner(
 )
 
 
-def get_page_response(url: str) -> requests.Response:
+def get_page_response(url: str, timeout: float = 30) -> requests.Response:
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
-    response = requests.get(url, params=query)
+    response = requests.get(url, params=query, timeout=timeout)
     return response
 
 

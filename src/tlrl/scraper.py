@@ -60,10 +60,12 @@ def ingest_impl(link: str, date: str, title: Optional[str] = None) -> dict:
 
 
 def ingest_date(url: str, date: str) -> pd.DataFrame:
-    response = requests.get(url, params={"day": date})
+    response = requests.get(url, params={"day": date}, timeout=30)
     links_and_title = utils.get_articles_links_and_title(response)
+    print(f'INFO: scraping {len(links_and_title)} links.')
     rows = []
     for link, title in links_and_title:
+        print(f'INFO: scraping url={link} title={title}')
         rows.append(ingest_impl(link=link, date=date, title=title))
 
     return pd.DataFrame.from_dict(rows)
