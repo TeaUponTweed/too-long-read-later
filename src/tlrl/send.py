@@ -17,7 +17,7 @@ def create_message(
 
     # Record the MIME type - text/html.
     # TODO can add style https://developers.google.com/gmail/design/css#example
-    part1 = MIMEText(contents_html, "html")
+    part1 = MIMEText(contents_html, "html", "utf-8")
 
     # Attach parts into message container
     msg.attach(part1)

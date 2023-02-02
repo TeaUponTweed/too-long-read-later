@@ -8,6 +8,7 @@ import requests
 
 from tlrl import db, utils
 from tlrl.scraper import ingest_date
+from tlrl.send import send_mesage
 
 
 @click.group()
@@ -19,7 +20,8 @@ def cli():
 @click.argument("link", required=True, type=str)
 @click.option("-u", "--user-uuid", required=False, type=str, default=None)
 @click.option("--inline/--no-inline", "inline", default=True)
-def cat_link(link: str, user_uuid: Optional[str], inline: bool):
+@click.option("-e", "--email", required=False, type=str, default=None)
+def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[str]):
     title, html, _ = utils.extract_content(utils.get_page_response(link).text, url=link)
     if inline:
         html = utils.apply_template(
@@ -42,7 +44,10 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool):
                 "user_uuid": user_uuid,
             },
         )
-    print(html)
+    if email:
+        send_mesage(email, f"Hacker News: '{title}'", html)
+    else:
+        print(html)
 
 
 @cli.command("ingest")

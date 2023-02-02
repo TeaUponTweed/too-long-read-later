@@ -110,7 +110,9 @@ def get_article_info(response: requests.Response) -> tuple[str, str, int]:
         scores = [None for _ in range(len(links))]
 
     return [
-        (link["href"], link.string, score) for score,link in zip(scores, links) if link["href"].startswith("http")
+        (link["href"], link.string, score)
+        for score, link in zip(scores, links)
+        if link["href"].startswith("http")
     ]
 
 
