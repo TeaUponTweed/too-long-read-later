@@ -1,10 +1,11 @@
 {
   "name": "Too Long, Read Later",
   "description": "Send a copy of a website to your inbox!",
-  "version": "1.1",
+  "version": "1.2",
   "manifest_version": 3,
   "action": {
-    "default_title": "Too long, didn't red"
+    "default_title": "Too long, read later"
+    // "default_popup": "popup.html"
   },
   "host_permissions": [
       "https://news.derivativeworks.co/*"

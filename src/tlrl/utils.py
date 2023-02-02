@@ -24,7 +24,8 @@ from tlrl import db
 def convert_to_absolute_links(url: str, html: str) -> str:
     # Download the webpage
     soup = BeautifulSoup(html, "html.parser")
-
+    # TODO get all image blocks and convert source
+    # TODO double check CSS stuff
     # Convert all relative links to absolute links
     for link in soup.find_all("a"):
         href = link.get("href")
