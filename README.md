@@ -36,7 +36,6 @@ Eventually I would like use these scraping utilities into a chrome extension, si
 
 TODO
 - allow people to undo feedback
-- get hn score as a feature
 - open email -> db
 - click link -> db
 - better feedback ux (currently opens a new tab with no content)
@@ -47,3 +46,5 @@ TODO
 - update extension publish version to 1.1
 	- make icon easier to see
 	- provide feedback that the email was sent successfully or if not (alert for both is fine)
+- use hacker news api rather than scraping https://github.com/HackerNews/API
+- look at link filetype to make sure images are scraped correctly

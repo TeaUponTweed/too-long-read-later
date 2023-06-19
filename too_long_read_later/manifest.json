@@ -5,7 +5,6 @@
   "manifest_version": 3,
   "action": {
     "default_title": "Too long, read later"
-    // "default_popup": "popup.html"
   },
   "host_permissions": [
       "https://news.derivativeworks.co/*"

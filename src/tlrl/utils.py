@@ -72,14 +72,26 @@ _HTML_CLEANER = Cleaner(
 )
 
 
-def get_page_response(url: str, timeout: float = 30) -> requests.Response:
+def get_page_response(url: str, timeout: float = 30, max_size: int = 2 * 1024 * 1024) -> requests.Response:
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
-    response = requests.get(url, params=query, timeout=timeout)
-    return response
+    response = requests.get(url, params=query, timeout=timeout, stream=True)
+    size = 0
+    content = bytes()
+    for chunk in response.iter_content(chunk_size=1024):
+        content += chunk
+        size += len(chunk)
+        if size > max_size:
+            raise ValueError("Response too large, stopping download...")
+    # we create a new response with the content that we've downloaded so far
+    new_response = requests.Response()
+    new_response.status_code = response.status_code
+    new_response.headers = response.headers
+    new_response._content = content
+    return new_response
 
 
 def extract_content(html: str, url: str) -> Tuple[str, str, List[float]]:

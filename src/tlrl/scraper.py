@@ -71,6 +71,9 @@ def ingest_date(url: str, date: str) -> pd.DataFrame:
     print(f"INFO: scraping {len(article_info)} links.")
     rows = []
     for link, title, article_score in article_info:
+        if link.endswith(".pdf"):
+            print(f"INFO: skipping {link} since it is likely a PDF.")
+            continue
         print(f"INFO: scraping url={link} title={title} score={article_score}")
         rows.append(
             ingest_impl(link=link, date=date, title=title, article_score=article_score)
