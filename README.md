@@ -41,10 +41,46 @@ TODO
 - better feedback ux (currently opens a new tab with no content)
 - "should inline" model (a threshold on readability RMS seems good)
 - more configurable article times
-- apostrophe bug https://blog.jcoglan.com/2017/05/08/merging-with-diff3/ we've ->weâ€™ve
 - improve landing page to make it look nicer and link to extension once it's published
 - update extension publish version to 1.1
 	- make icon easier to see
 	- provide feedback that the email was sent successfully or if not (alert for both is fine)
 - use hacker news api rather than scraping https://github.com/HackerNews/API
 - look at link filetype to make sure images are scraped correctly
+
+
+```
+docker ps | grep server_config-yesterdays_news_scraper
+docker exec -it $CONTAINER_ID /bin/bash
+python3 -c 'from tlrl.scraper import pipeline; pipeline.run()'
+
+docker ps | grep server_config-yesterdays_news_sender
+docker exec -it $CONTAINER_ID /bin/bash
+python3 -c 'from tlrl.scraper import pipeline; pipeline.run()'
+```
+
+
+```
+sqlite3 ../databases/news/news.db "select article_hn_date,count(*) from articles group by article_hn_date;"
+sqlite3 ../databases/news/news.db "
+            with send_count as (
+                select user_id,count(*) as num_sent
+                from feedback
+                join articles on articles.rowid = feedback.article_id
+                where articles.article_hn_date = '2023-06-17'
+                group by user_id
+            )
+            select users.rowid,users.email from users
+            left join send_count on users.rowid = send_count.user_id
+            where users.confirmed and ((send_count.num_sent < users.num_articles_per_day) or send_count.num_sent is null)"
+sqlite3 ../databases/news/news.db "
+            with send_count as (
+                select user_id,count(*) as num_sent
+                from feedback
+                join articles on articles.rowid = feedback.article_id
+                where articles.article_hn_date = '2023-06-17'
+                group by user_id
+            )
+            select users.email,num_sent,num_articles_per_day from users
+            left join send_count on users.rowid = send_count.user_id"
+```

@@ -29,9 +29,9 @@ def create_message(
 @contextmanager
 def _get_server() -> Iterator[smtplib.SMTP]:
     # Credentials
-    username = os.environ["EMAIL_ADDRESS"]
-    password = os.environ["GMAIL_SMTP_PW"]
-    server = smtplib.SMTP("smtp.gmail.com", 587)
+    username = os.environ["SMTP_UN"]
+    password = os.environ["SMTP_PW"]
+    server = smtplib.SMTP("smtp.sendgrid.net", 587)
     server.ehlo()
     server.starttls()
     server.login(username, password)
