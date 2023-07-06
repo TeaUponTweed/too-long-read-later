@@ -54,9 +54,9 @@ docker ps | grep server_config-yesterdays_news_scraper
 docker exec -it $CONTAINER_ID /bin/bash
 python3 -c 'from tlrl.scraper import pipeline; pipeline.run()'
 
-docker ps | grep server_config-yesterdays_news_sender
+CONTAINER_ID=$(docker ps | grep server_config-yesterdays_news_sender | head -n1 | cut -d ' ' -f1); if [[ -n $CONTAINER_ID ]]; then echo "Container ID is $CONTAINER_ID"; else echo "No container yesterdays_news_sender"; fi
 docker exec -it $CONTAINER_ID /bin/bash
-python3 -c 'from tlrl.scraper import pipeline; pipeline.run()'
+python3 -c 'from tlrl.sender import pipeline; pipeline.run()'
 ```
 
 
@@ -67,7 +67,7 @@ sqlite3 ../databases/news/news.db "
                 select user_id,count(*) as num_sent
                 from feedback
                 join articles on articles.rowid = feedback.article_id
-                where articles.article_hn_date = '2023-06-17'
+                where articles.article_hn_date = '2023-07-06'
                 group by user_id
             )
             select users.rowid,users.email from users
@@ -78,9 +78,19 @@ sqlite3 ../databases/news/news.db "
                 select user_id,count(*) as num_sent
                 from feedback
                 join articles on articles.rowid = feedback.article_id
-                where articles.article_hn_date = '2023-06-17'
+                where articles.article_hn_date = '2023-07-05'
                 group by user_id
             )
             select users.email,num_sent,num_articles_per_day from users
             left join send_count on users.rowid = send_count.user_id"
+sqlite3 ../databases/news/news.db "
+    select articles.rowid as article_id, users.rowid as user_id
+    from articles
+    cross join users
+    where article_hn_date = '2023-07-05'
+    and not exists (
+        select * from feedback
+        where articles.rowid = feedback.article_id
+        and users.rowid = feedback.user_id
+    )"
 ```
