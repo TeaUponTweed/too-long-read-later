@@ -17,53 +17,29 @@ def ingest_impl(
     date: str,
     title: Optional[str] = None,
     article_score: Optional[int] = None,
-) -> dict:
+) -> Optional[dict]:
     try:
         response = utils.get_page_response(link)
-        inferred_title, html, scores = utils.extract_content(response.text, url=link)
     except Exception as e:
-        print(f"ERR Failed to scrape {link}. Failed with error: {str(e)}")
-        return {
-            "article_hn_date": date,
-            "scrape_time": int(time.time()),
-            "title": title,
-            "url": link,
-            "content": None,
-            "readability_rms": None,
-            "readability_sum": None,
-            "readability_mean": None,
-            "num_chars": None,
-            "num_paragraphs": None,
-            "score": article_score,
-        }
+        print(f"ERR Failed to scrape {link}. Failed with error:\n{str(e)}")
+        return
     else:
+        if response.status_code != 200:
+            print(f"ERR {link}. returned code {response.status_code}")
+            return
+        inferred_title, _, summary = utils.extract_content(response.text)
         if title is None:
             title = inferred_title
-        if len(scores) > 0:
-            readability_rms = math.sqrt(
-                sum(score**2 for score in scores) / len(scores)
-            )
-            readability_sum = sum(scores)
-            readability_mean = sum(scores) / len(scores)
-        else:
-            readability_rms = 0
-            readability_sum = 0
-            readability_mean = 0
 
         return {
             "article_hn_date": date,
             "scrape_time": int(time.time()),
             "title": title,
             "url": link,
-            "content": html,
-            "readability_rms": readability_rms,
-            "readability_sum": readability_sum,
-            "readability_mean": readability_mean,
-            "num_chars": len(html),
-            "num_paragraphs": len(scores),
+            "content": response.text,
+            "summary": summary,
             "score": article_score,
         }
-
 
 def ingest_date(url: str, date: str) -> pd.DataFrame:
     response = requests.get(url, params={"day": date}, timeout=30)
@@ -75,6 +51,7 @@ def ingest_date(url: str, date: str) -> pd.DataFrame:
             print(f"INFO: skipping {link} since it is likely a PDF.")
             continue
         print(f"INFO: scraping url={link} title={title} score={article_score}")
+
         rows.append(
             ingest_impl(link=link, date=date, title=title, article_score=article_score)
         )

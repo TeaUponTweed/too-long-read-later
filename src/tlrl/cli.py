@@ -19,18 +19,18 @@ def cli():
 @cli.command("cat-link")
 @click.argument("link", required=True, type=str)
 @click.option("-u", "--user-uuid", required=False, type=str, default=None)
-@click.option("--inline/--no-inline", "inline", default=True)
+@click.option("--inline/--no-inline", "inline", default=False)
 @click.option("-e", "--email", required=False, type=str, default=None)
 def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[str]):
-    title, html, _ = utils.extract_content(utils.get_page_response(link).text, url=link)
+    inferred_title, text, summary = utils.extract_content(utils.get_page_response(link).text)
     if inline:
         html = utils.apply_template(
             "email_template.html",
             {
-                "article_title": title,
+                "article_title": inferred_title,
                 "article_id": -1,
                 "article_url": link,
-                "article_body": html,
+                "article_body": text,
                 "user_uuid": user_uuid,
             },
         )
@@ -38,16 +38,19 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[
         html = utils.apply_template(
             "email_template_no_inline.html",
             {
-                "article_title": title,
+                "article_title": inferred_title,
                 "article_id": -1,
                 "article_url": link,
                 "user_uuid": user_uuid,
             },
         )
-    if email:
-        send_mesage(email, f"Hacker News: '{title}'", html)
+
+    if email is not None:
+        send_mesage(email, f"Detivative Works News: '{title}'", html)
     else:
-        print(html)
+        print(text)
+        print('-----------')
+        print(summary)
 
 
 @cli.command("ingest")

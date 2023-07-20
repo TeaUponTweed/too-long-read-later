@@ -9,16 +9,24 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
 
-import css_inline
-import markdown
 import pytz
 import requests
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 from jinja2 import Environment, FileSystemLoader
 from lxml.html.clean import Cleaner
 from readability import Document
 
 from tlrl import db
+from tlrl.summary import get_summary
+
+
+@functools.cache
+def get_user_agent() -> UserAgent:
+    try:
+        return UserAgent(use_external_data=True)
+    except:
+        return UserAgent()
 
 
 def convert_to_absolute_links(url: str, html: str) -> str:
@@ -72,13 +80,19 @@ _HTML_CLEANER = Cleaner(
 )
 
 
-def get_page_response(url: str, timeout: float = 30, max_size: int = 2 * 1024 * 1024) -> requests.Response:
+def get_page_response(
+    url: str, timeout: float = 30, max_size: int = 2 * 1024 * 1024
+) -> requests.Response:
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
+    # get fake user agent
+    headers = {"User-Agent": get_user_agent()["google chrome"]}
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
-    response = requests.get(url, params=query, timeout=timeout, stream=True)
+    response = requests.get(
+        url, params=query, timeout=timeout, stream=True, headers=headers
+    )
     size = 0
     content = bytes()
     for chunk in response.iter_content(chunk_size=1024):
@@ -94,17 +108,18 @@ def get_page_response(url: str, timeout: float = 30, max_size: int = 2 * 1024 * 
     return new_response
 
 
-def extract_content(html: str, url: str) -> Tuple[str, str, List[float]]:
-    html = convert_to_absolute_links(url=url, html=html)
-    # inline CSS
-    html = css_inline.inline(html)
-    doc = Document(html, cleaner=_HTML_CLEANER)
-    # extract content
-    return (
-        doc.title(),
-        doc.summary(html_partial=True),
-        [el["content_score"] for el in doc.score_paragraphs().values()],
+def extract_content(html: str) -> Tuple[str, str, str]:
+    # doc = Document(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    text = " ".join(
+        t.strip()
+        for t in soup.findAll(text=True)
+        if t.parent.name
+        not in ["style", "script", "head", "title", "meta", "[document]"]
     )
+    title = soup.title()
+    summary = get_summary(text)
+    return (title, text, summary)
 
 
 def get_article_info(response: requests.Response) -> tuple[str, str, int]:

@@ -82,7 +82,9 @@ def gen_emails_to_send(
         sorted(paired_ids, key=lambda x: x[1]), key=lambda x: x[1]
     ):
         if user_id not in to_send_user_ids:
-            print(f"INFO: Not sending email to user_id = {user_id}. Emails already sent.")
+            print(
+                f"INFO: Not sending email to user_id = {user_id}. Emails already sent."
+            )
             continue
         else:
             email = to_send_user_ids[user_id]
