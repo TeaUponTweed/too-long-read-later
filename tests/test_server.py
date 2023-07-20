@@ -198,13 +198,13 @@ def test_ingest(db_loc: pathlib.Path):
     link = "test_post_html"
     with open("tests/test_post.html") as fi:
         html = fi.read()
-    title, summary, content = utils.extract_content(html, url=link)
+    title, text, summary = utils.extract_content(html, url=link)
     html = utils.apply_template(
         "email_template.html",
         {
             "article_title": title,
             "article_url": "test_post_html",
-            "article_body": html,
+            "article_body": text,
             "article_id": -1,
         },
     )
@@ -222,7 +222,7 @@ def test_ingest(db_loc: pathlib.Path):
         {
             "article_title": title,
             "article_url": link,
-            "article_body": html,
+            "article_body": text,
             "user_uuid": str(uuid.uuid4()),
             "article_id": -1,
         },

@@ -22,7 +22,9 @@ def cli():
 @click.option("--inline/--no-inline", "inline", default=False)
 @click.option("-e", "--email", required=False, type=str, default=None)
 def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[str]):
-    inferred_title, text, summary = utils.extract_content(utils.get_page_response(link).text)
+    inferred_title, text, summary = utils.extract_content(
+        utils.get_page_response(link).text
+    )
     if inline:
         html = utils.apply_template(
             "email_template.html",
@@ -49,7 +51,7 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[
         send_mesage(email, f"Detivative Works News: '{title}'", html)
     else:
         print(text)
-        print('-----------')
+        print("-----------")
         print(summary)
 
 

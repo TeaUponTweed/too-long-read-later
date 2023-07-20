@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS articles (
 	scrape_time INT NOT NULL,
 	title TEXT,
 	url TEXT NOT NULL,
-	-- extracted text
+	-- scraped text
 	content TEXT,
+	summary TEXT,
 	-- features
 	readability_rms REAL,
 	readability_sum REAL,

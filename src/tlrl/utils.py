@@ -80,6 +80,11 @@ _HTML_CLEANER = Cleaner(
 )
 
 
+def get_scores(html: str) -> list[float]:
+    doc = Document(html, cleaner=_HTML_CLEANER)
+    return [el["content_score"] for el in doc.score_paragraphs().values()]
+
+
 def get_page_response(
     url: str, timeout: float = 30, max_size: int = 2 * 1024 * 1024
 ) -> requests.Response:
@@ -109,16 +114,18 @@ def get_page_response(
 
 
 def extract_content(html: str) -> Tuple[str, str, str]:
-    # doc = Document(html)
-    soup = BeautifulSoup(html, 'html.parser')
+    doc = Document(html, cleaner=_HTML_CLEANER)
+    text = doc.summary()
+    # print(text)
+    soup = BeautifulSoup(text, "html.parser")
     text = " ".join(
         t.strip()
         for t in soup.findAll(text=True)
         if t.parent.name
         not in ["style", "script", "head", "title", "meta", "[document]"]
     )
-    title = soup.title()
-    summary = get_summary(text)
+    title = doc.title()
+    summary = get_summary(title, text)
     return (title, text, summary)
 
 
