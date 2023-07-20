@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 import pandas as pd
-from flask import Flask, jsonify, request, send_file, send_from_directory
+from flask import Flask, jsonify, request, send_file, send_from_directory, redirect
 
 from tlrl import db, utils
 from tlrl.scraper import ingest_impl
@@ -134,7 +134,8 @@ def confirm_route():
     user_info = utils.get_user_info(conn=conn, user_uuid=user_uuid)
     if user_info is not None:
         utils.confirm(conn=conn, email=user_info.email)
-        return "Success", 200
+        return redirect("/static/subcription_confirmed.html")
+
     else:
         return "Unrecognized user_uuid", 400
 
@@ -142,16 +143,7 @@ def confirm_route():
 @api.route("/subscribe")
 def subscribe_route():
     email = request.args.get("email")
-    num_articles_per_day = request.args.get("num_articles_per_day")
-    if num_articles_per_day:
-        try:
-            num_articles_per_day = int(num_articles_per_day)
-        except ValueError:
-            num_articles_per_day = None
-
-    if num_articles_per_day is None:
-        num_articles_per_day = 10
-
+    num_articles_per_day = 1
     if email is None:
         return "No email", 400
 
@@ -187,9 +179,7 @@ def subscribe_route():
             subject="Please Confirm Email For news.derivativeworks.co",
             msg=msg,
         )
-        return "Success. Please confirm your email.", 200
-    else:
-        return "Success. Prefereces updated", 200
+    return redirect("/static/confirmation.html")
 
 
 @api.route("/")
