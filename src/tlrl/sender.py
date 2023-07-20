@@ -1,6 +1,7 @@
 import itertools
 import random
 import sqlite3
+from dataclasses import dataclass
 from typing import Iterator, List, Optional, Tuple
 
 import prefect
@@ -9,106 +10,104 @@ from tlrl import db, utils
 from tlrl.send import send_mesage
 
 
+@dataclass
+class Article:
+    title: str
+    summary: str
+    url: str
+    artice_id: int
+
+def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
+    with db.transaction(conn):
+        article_data = conn.execute(
+            """select rowid, title,summary, url from articles
+            where article_hn_date = ?
+            and summary is not null
+            """, (date,)
+        ).fetchall()
+
+    articles = [
+        Article(
+            title=article_title,
+            summary=article_summary,
+            url=article_url,
+            artice_id=artice_id
+        )
+        for artice_id, article_title, article_summary, article_url in article_data
+    ]
+    return articles
+
 def _prepare_email(
-    user_id: int, article_ids: List[int], inline: bool = True
-) -> Optional[Tuple[str, str, int]]:
+    user_id: int, articles: Optional[List[Article]]
+) -> str:
     # TODO eventually content curation and inlining decisions will go here. Ideally this would not have to know about the database....
     conn = utils.get_connection()
-    if len(article_ids) == 0:
-        return None
-    else:
-        article_id = random.choice(article_ids)
-    with db.transaction(conn):
-        (article_title, article_content_html, article_url) = conn.execute(
-            "select title,content, url from articles where rowid = ?", (article_id,)
-        ).fetchone()
+
     user_info = utils.get_user_info(conn=conn, row_id=user_id)
-    if inline:
-        html = utils.apply_template(
+    if user_info is not None:
+        return utils.apply_template(
             "email_template.html",
             {
-                "article_title": article_title,
-                "article_url": article_url,
-                "article_body": article_content_html,
+                "articles": articles,
                 "user_uuid": user_info.user_uuid,
-                "article_id": article_id,
             },
         )
     else:
-        html = utils.apply_template(
-            "email_template_no_inline.html",
-            {
-                "article_title": article_title,
-                "article_url": article_url,
-                "user_uuid": user_info.user_uuid,
-                "article_id": article_id,
-            },
-        )
-    return article_title, html, article_id
+        print(f"WARN: Cannot prepre email. Unknown user_id {user_id}")
+        return None
+
 
 
 def gen_emails_to_send(
     conn: Optional[sqlite3.Connection] = None, date: Optional[str] = None
-) -> Iterator[Tuple[str, str, str, int, int]]:
+) -> Iterator[Tuple[str, str]]:
     if date is None:
         date = utils.get_yesterday_mt()
     if conn is None:
         conn = utils.get_connection()
-    # TODO this can all be done in sql, het HCB to help
-    # TODO can this fail? add logging
+
     with db.transaction(conn):
-        to_send_user_ids = conn.execute(
-            """
-            with send_count as (
-                select user_id,count(*) as num_sent
-                from feedback
-                join articles on articles.rowid = feedback.article_id
-                where articles.article_hn_date = ?
-                group by user_id
-            )
-            select users.rowid,users.email from users
-            left join send_count on users.rowid = send_count.user_id
-            where users.confirmed and ((send_count.num_sent < users.num_articles_per_day) or send_count.num_sent is null)
-        """,
-            (date,),
+        subscribed_users = conn.execute(
+            """select users.rowid,users.email from users
+               where users.confirmed and users.num_articles_per_day > 0"""
         ).fetchall()
-    to_send_user_ids = dict(to_send_user_ids)
-    paired_ids = utils.get_articles_without_feedback(conn, date)
-    if len(paired_ids) == 0 and len(to_send_user_ids) > 0:
-        print("WARN: failed to find any articles to send!")
+
+    # with db.transaction(conn):
+    #     q = """select rowid from articles
+    #            where article_hn_date = ?"""
+    #     print(q)
+    #     print(date)
+    #     article_ids = conn.execute(
+    #         """select rowid from articles
+    #            where article_hn_date = ?""", (date,)
+    #     ).fetchall()
+    articles = get_articles(conn=conn, date=date)
+
+    if len(subscribed_users) == 0:
+        print("WARN: No users subscribed")
         return
 
-    for user_id, ids in itertools.groupby(
-        sorted(paired_ids, key=lambda x: x[1]), key=lambda x: x[1]
-    ):
-        if user_id not in to_send_user_ids:
-            print(
-                f"INFO: Not sending email to user_id = {user_id}. Emails already sent."
-            )
-            continue
-        else:
-            email = to_send_user_ids[user_id]
-        article_ids, _ = zip(*ids)
-        ret = _prepare_email(user_id=user_id, article_ids=article_ids)
-        if ret is not None:
-            yield (email, *ret, user_id)
+    if len(articles) == 0:
+        print("WARN: No articles to send")
+        return
+
+    for user_id, user_email in subscribed_users:
+        email_content = _prepare_email(user_id=user_id, articles=articles)
+        if email_content is not None:
+            yield (user_email, email_content)
 
 
 @prefect.task
 def pipeline():
     conn = utils.get_connection()
-    ix = utils.hours_since_8am_mt()
-    if not (1 <= ix <= 12):
-        print("Only works between 9AM and 8PM")
+    ix = utils.hours_since_6am_mt()
+    if not (ix == 0):
+        print("Only runs at 6AM MT")
         return
-
-    for email, title, content, article_id, user_id in gen_emails_to_send():
-        send_mesage(email, f"Hacker News: '{title}'", content)
-        with db.transaction(conn):
-            conn.execute(
-                "insert into feedback(user_id,article_id) values (?,?)",
-                (user_id, article_id),
-            )
+    conn = utils.get_connection()
+    date = utils.get_yesterday_mt()
+    for email,  content in gen_emails_to_send(conn=conn, date=date):
+        send_mesage(email, f"Yesderdays Newsletter, Today! {date}'", content)
 
 
 if __name__ == "__main__":

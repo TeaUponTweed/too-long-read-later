@@ -64,41 +64,54 @@ def tlrl():
     return jsonify(status="success", url=url, email=email), 200
 
 
-@api.route("/feedback/<col_name>")
-def feedback_route(col_name: str):
+@api.route("/feedback")
+def feedback_route():
     user_uuid = request.args.get("user_uuid")
     article_id = request.args.get("article_id")
     sentiment = request.args.get("sentiment")
     if user_uuid is None:
-        return "No user_uuid provided", 400
+        print("CLIENT ERROR: No user_uuid provided")
+        return "Bad Request", 400
+
     if article_id is None:
-        return "No article_id provided", 400
+        print("CLIENT ERROR: No article_id provided")
+        return "Bad Request", 400
+
     if sentiment is None:
-        return "No sentiment provided", 400
+        print("CLIENT ERROR: No sentiment provided")
+        return "Bad Request", 400
+
     try:
         sentiment = int(sentiment)
     except ValueError:
-        return "Bad value for sentiment", 400
+        print("CLIENT ERROR: Bad value for sentiment")
+        return "Bad Request", 400
+
     else:
         try:
             article_id = int(article_id)
         except ValueError:
-            return "Bad value for article_id", 400
+            print("CLIENT ERROR: Bad value for article_id")
+            return "Bad Request", 400
         else:
             conn = utils.get_connection()
             try:
                 user_info = utils.get_user_info(conn=conn, user_uuid=user_uuid)
-                utils.set_feedback(
-                    conn=conn,
-                    col_name=col_name,
-                    article_id=article_id,
-                    user_id=user_info.row_id,
-                    sentiment=sentiment,
-                )
-            except ValueError:
-                return "Bad feedback column", 400
+                if user_info is not None:
+                    utils.set_feedback(
+                        conn=conn,
+                        col_name="sentiment",
+                        article_id=article_id,
+                        user_id=user_info.row_id,
+                        sentiment=sentiment,
+                    )
+                else:
+                    print(f"CLIENT ERROR: Unknown user {user_uuid}")
+                    return "Bad Request", 400
+            except Exception as e:
+                print(f"ERROR: {e}")
+                return "Internal Server Error", 500
             else:
-                # TODO allow a person to undo the feedback
                 return "Success", 200
 
 
