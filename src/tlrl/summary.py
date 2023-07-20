@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 GPT_MODEL = "gpt-3.5-turbo"
 ENC = tiktoken.encoding_for_model(GPT_MODEL)
 MAX_TOKENS = 4096
+SLACK_TOKENS = 500
 
 
 def get_num_tokens(text: str) -> int:
@@ -25,11 +26,10 @@ def get_summary(
     system_prompt = "You are a helpful assistant."
     prompt = f"""
 Craft a two to three sentence blurb about the article, providing pertinent context and intriguing potential readers.
-
+Just provide the summary, do not reference "the article", "in this article", etc.
 If the article is inaccessible or procedural, such as a source code listing or release/patch notes, respond with "Unable to summarize".
 
 Follow these rules:
-- Do not reference "The Article", instead just provide the summary
 - Use short sentences.
 - Avoid the use of adjectives.
 - Eliminate every superfluous word.
@@ -43,9 +43,11 @@ Text: {text}
 """
     system_tokens = ENC.encode(system_prompt)
     tokens = ENC.encode(prompt)
-    if len(tokens) > MAX_TOKENS:
-        print(f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS}")
-        prompt = ENC.decode(tokens[: MAX_TOKENS - len(system_tokens) - 30])
+    if len(tokens) > MAX_TOKENS - SLACK_TOKENS:
+        print(
+            f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS-SLACK_TOKENS}"
+        )
+        prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS])
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -64,9 +66,6 @@ Text: {text}
             initial_wait = initial_wait * 2
         else:
             summary = response.choices[0].message["content"]
-            print("########")
-            print(summary)
-            print("########")
             if summary.lower().rstrip('."').lstrip('"') == "unable to summarize":
                 print("INFO GPT chose not to summarize")
                 return None

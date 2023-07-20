@@ -86,7 +86,7 @@ def get_scores(html: str) -> list[float]:
 
 
 def get_page_response(
-    url: str, timeout: float = 30, max_size: int = 2 * 1024 * 1024
+    url: str, timeout: float = 10, max_size: int = 2 * 1024 * 1024
 ) -> requests.Response:
     # parse url to get response
     o = urlparse(url)
