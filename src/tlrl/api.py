@@ -122,7 +122,7 @@ def unsubscribe_route():
         return "No user_uuid", 400
     conn = utils.get_connection()
     utils.unsubscribe(conn=conn, user_uuid=user_uuid)
-    return "Success", 200
+    return redirect("/static/unsubscribed.html")
 
 
 @api.route("/confirm")
@@ -134,7 +134,7 @@ def confirm_route():
     user_info = utils.get_user_info(conn=conn, user_uuid=user_uuid)
     if user_info is not None:
         utils.confirm(conn=conn, email=user_info.email)
-        return redirect("/static/subcription_confirmed.html")
+        return redirect("/static/subscription_confirmed.html")
 
     else:
         return "Unrecognized user_uuid", 400
