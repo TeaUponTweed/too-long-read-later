@@ -112,7 +112,7 @@ def feedback_route():
                 print(f"ERROR: {e}")
                 return "Internal Server Error", 500
             else:
-                return "Success", 200
+                return redirect("/static/feedback.html")
 
 
 @api.route("/unsubscribe")

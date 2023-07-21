@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>You're Signed Up</title>
+    <title>Feedback Submitted</title>
     <style type="text/css">
         body {
             font-family: Arial, sans-serif;
@@ -37,11 +37,22 @@
         }
     </style>
 </head>
-
 <body>
     <div class="confirmation-card">
-        <h2>Confirmation Email Sent!</h2>
-        <p>Thank you for subscribing. Please check your email and confirm your subscription. If you're already a subscriber, no email will be sent.</p>
+        <h2>Thank you for your feedback!</h2>
+        <p>We're using your feedback to create an article recommendation engine and we couldn't do it without you. If you clicked this on accident, just mark the article as neutral to remove feedback.</p>
+        <p><em>This page will self destruct in <span id="countdown">5</span> seconds.</em></p>
+        <script>
+            var countdown = document.getElementById("countdown");
+            var secondsLeft = 5;
+            var countdownInterval = setInterval(function() {
+                secondsLeft--;
+                countdown.textContent = secondsLeft;
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    window.close();
+                }
+            }, 1000);
+        </script>
     </div>
 </body>
-</html>
