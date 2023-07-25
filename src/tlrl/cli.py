@@ -25,29 +25,17 @@ def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[
     inferred_title, text, summary = utils.extract_content(
         utils.get_page_response(link).text
     )
-    if inline:
+
+    if email is not None:
         html = utils.apply_template(
             "email_template.html",
             {
                 "article_title": inferred_title,
                 "article_id": -1,
                 "article_url": link,
-                "article_body": text,
                 "user_uuid": user_uuid,
             },
         )
-    else:
-        html = utils.apply_template(
-            "email_template_no_inline.html",
-            {
-                "article_title": inferred_title,
-                "article_id": -1,
-                "article_url": link,
-                "user_uuid": user_uuid,
-            },
-        )
-
-    if email is not None:
         send_mesage(email, f"Detivative Works News: '{title}'", html)
     else:
         print(text)

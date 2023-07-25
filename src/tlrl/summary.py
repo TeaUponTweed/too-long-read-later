@@ -23,23 +23,24 @@ def get_num_tokens(text: str) -> int:
 def get_summary(
     title: str, text: str, retries: int = 3, initial_wait=1
 ) -> Optional[str]:
+    # system_prompt = "You write zippy summaries for an news letter."
     system_prompt = "You are a helpful assistant."
     prompt = f"""
-Craft a two to three sentence blurb about the article, providing pertinent context and intriguing potential readers.
-Just provide the summary, do not reference "the article", "in this article", etc.
-If the article is inaccessible or procedural, such as a source code listing or release/patch notes, respond with "Unable to summarize".
+Summarize the following text into a concise two to three sentence blurb to hook potential readers.
+Respond with "Unable to summarize" if the text is blocked behind a paywall or procedural (e.g. patch notes)
 
-Follow these rules:
+Please adhere to these guidelines:
+- Do not reference the "article."
+- Do not use passive voice.
 - Use short sentences.
-- Avoid the use of adjectives.
-- Eliminate every superfluous word.
-- Do not use passive tense
-- Do not summarize documentation, patch notes, release notes, or source code
+- Minimize the use of adjectives.
+- Use common words where possible.
 
-Here is the article.
-Title: {title}
+Here is the text:
 
-Text: {text}
+{title}
+
+{text}
 """
     system_tokens = ENC.encode(system_prompt)
     tokens = ENC.encode(prompt)
@@ -58,7 +59,7 @@ Text: {text}
             response = openai.ChatCompletion.create(
                 model=GPT_MODEL,
                 messages=messages,
-                temperature=0.1,
+                temperature=0.3,
             )
         except openai.error.ServiceUnavailableError:
             print("INFO waiting and retrying to get summary")
