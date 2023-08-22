@@ -36,11 +36,13 @@ def article_ids(db_loc, num_articles_per_day) -> list[int]:
             "title": str(i),
             "url": f"not.a.url{i}",
             "content": "",
+            "summary": "",
             "readability_rms": 1,
             "readability_sum": 1,
             "readability_mean": 1,
             "num_chars": 1,
             "num_paragraphs": 1,
+            "score": 0,
         }
         for i in range(num_articles_per_day)
         for MM in range(1, 13)
@@ -92,7 +94,7 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
             }
         )
         response = api.test_client().get(subscibe_url)
-        assert response.status_code == 200
+        assert response.status_code == 302
         user_info = utils.get_user_info(conn=conn, email=row.email)
         if row.confirmed:
             confirm_url = "/confirm?" + urllib.parse.urlencode(
@@ -101,7 +103,7 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
                 }
             )
             response = api.test_client().get(confirm_url)
-            assert response.status_code == 200
+            assert response.status_code == 302
             with db.transaction(conn):
                 (confirmed,) = conn.execute(
                     "select confirmed from users where email = ?", (row.email,)
@@ -123,39 +125,35 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
 
 
 def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
-    # feedback
     conn = utils.get_connection(str(db_loc))
     date = "2020-01-01"
-    articles_and_users = utils.get_articles_without_feedback(conn=conn, date=date)
-    these_article_ids, these_user_ids = map(
-        lambda x: sorted(set(x)), zip(*articles_and_users)
-    )
-    assert len(articles_and_users) == num_articles_per_day * len(user_ids)
-    for user_id in user_ids:
-        user_info = utils.get_user_info(conn, row_id=user_id)
-        user_info2 = utils.get_user_info(conn, user_uuid=user_info.user_uuid)
-        user_info3 = utils.get_user_info(conn, email=user_info.email)
-        assert user_info == user_info2 == user_info3
-        for article_id in these_article_ids[:5]:
-            for col_name in "sentiment", "format_quality", "should_format":
-                for sentiment in [-1, 1]:
-                    response = api.test_client().get(
-                        f"/feedback/{col_name}?user_uuid={user_info.user_uuid}&article_id={article_id}&sentiment={sentiment}"
-                    )
-                    with db.transaction(conn):
-                        ret = conn.execute(
-                            f"select {col_name} from feedback where user_id = ? and article_id = ?",
-                            (user_info.row_id, article_id),
-                        ).fetchone()
-                    # conn.execute(f"select article_id,user_id from feedback").fetchall()
-                    assert response.status_code == 200
-                    assert ret[0] == sentiment
+    articles = utils.get_articles(conn=conn, date=date)
+    subscribed_users = utils.get_subscribed_users(conn=conn)
+    expected_num_subscribed = 2
+    assert len(articles) == num_articles_per_day
+    assert len(subscribed_users) == expected_num_subscribed
 
-    other_articles_and_users = utils.get_articles_without_feedback(conn=conn, date=date)
-    assert len(other_articles_and_users) == (num_articles_per_day - 5) * len(user_ids)
+    # test user lookup and feedback
+    for user_id in user_ids:
+        user_info = utils.get_user_info(conn=conn, row_id=user_id)
+        user_info2 = utils.get_user_info(conn=conn, user_uuid=user_info.user_uuid)
+        user_info3 = utils.get_user_info(conn=conn, email=user_info.email)
+        assert user_info == user_info2 == user_info3
+        for article in articles[:5]:
+            for sentiment in [-1, 1]:
+                response = api.test_client().get(
+                    f"/feedback?user_uuid={user_info.user_uuid}&article_id={article.article_id}&sentiment={sentiment}"
+                )
+                with db.transaction(conn):
+                    ret = conn.execute(
+                        f"select sentiment from feedback where user_id = ? and article_id = ?",
+                        (user_info.row_id, article.article_id),
+                    ).fetchone()
+                assert response.status_code == 302
+                assert ret[0] == sentiment
 
     emails = list(sender.gen_emails_to_send(date=date))
-    assert len(emails) == 2
+    assert len(emails) == expected_num_subscribed
     assert sorted([emails[0][0], emails[1][0]]) == [
         "asd4@asd.asd",
         "asd5@asd.asd",
@@ -173,7 +171,7 @@ def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
         {"user_uuid": str(user_info.user_uuid)}
     )
     response = api.test_client().get(unsub_url)
-    assert response.status_code == 200
+    assert response.status_code == 302
     with db.transaction(conn):
         (num_articles,) = conn.execute(
             "select num_articles_per_day from users where rowid = ?",
@@ -185,7 +183,7 @@ def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
         {"email": str(user_info.email), "num_articles_per_day": 11}
     )
     response = api.test_client().get(sub_url)
-    assert response.status_code == 200
+    assert response.status_code == 302
     with db.transaction(conn):
         (num_articles,) = conn.execute(
             "select num_articles_per_day from users where rowid = ?",
@@ -198,32 +196,20 @@ def test_ingest(db_loc: pathlib.Path):
     link = "test_post_html"
     with open("tests/test_post.html") as fi:
         html = fi.read()
-    title, text, summary = utils.extract_content(html, url=link)
-    html = utils.apply_template(
-        "email_template.html",
-        {
-            "article_title": title,
-            "article_url": "test_post_html",
-            "article_body": text,
-            "article_id": -1,
-        },
-    )
-    _ = utils.apply_template(
-        "email_template_no_inline.html",
-        {
-            "article_title": title,
-            "article_url": "test_post_html",
-            "user_uuid": str(uuid.uuid4()),
-            "article_id": -1,
-        },
-    )
-    _ = utils.apply_template(
-        "email_template.html",
-        {
-            "article_title": title,
-            "article_url": link,
-            "article_body": text,
-            "user_uuid": str(uuid.uuid4()),
-            "article_id": -1,
-        },
-    )
+    title, text, summary = utils.extract_content(html)
+    for article_id in (None, 10):
+        for user_id in (None, 11):
+            html = utils.apply_template(
+                "email_template.html",
+                {
+                    "articles": [
+                        utils.Article(
+                            title=title,
+                            summary=summary,
+                            url=link,
+                            article_id=article_id,
+                        )
+                    ],
+                    "user_uuid": user_id,
+                },
+            )

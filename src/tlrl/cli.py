@@ -9,7 +9,6 @@ import requests
 from tlrl import db, utils
 from tlrl.scraper import ingest_date
 from tlrl.send import send_mesage
-from tlrl.sender import Article
 
 
 @click.group()
@@ -30,7 +29,7 @@ def cat_link(link: str, inline: bool, email: Optional[str]):
         "email_template.html",
         {
             "articles": [
-                Article(
+                utils.Article(
                     title=inferred_title, summary=summary, url=link, article_id=None
                 )
             ],

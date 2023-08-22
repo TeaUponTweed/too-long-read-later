@@ -18,7 +18,7 @@ def db_loc2(tmpdir: pathlib.Path) -> pathlib.Path:
 
 @pytest.mark.slow
 def test_scrape(db_loc2: pathlib.Path):
-    pipeline.run()
+    pipeline.run(2)
     yesterday = utils.get_yesterday_mt()
     conn = utils.get_connection()
     with db.transaction(conn):
@@ -27,20 +27,40 @@ def test_scrape(db_loc2: pathlib.Path):
         ).fetchone()
 
     assert cnt > 0
-    # # add 2 confirmed users
-    # for email in "asd1@asd.asd", "asd2@asd.asd":
-    #     subscribe_url = "/subscribe?" + urllib.parse.urlencode(
-    #         {
-    #             "email": email,
-    #             "num_articles_per_day": 1,
-    #         }
-    #     )
-    #     response = api.test_client().get(sub_url)
-    #     assert response.status_code == 200
-    #     confirm_url = "/confirm?" + urllib.parse.urlencode(
-    #         {
-    #             "email": email,
-    #         }
-    #     )
-    #     response = api.test_client().get(confirm_url)
-    #     assert response.status_code == 200
+
+
+def test_subscribe(db_loc2: pathlib.Path):
+    # add 2 confirmed users
+    conn = utils.get_connection()
+    for email in "asd1@asd.asd", "asd2@asd.asd":
+        user = utils.get_user_info(conn=conn, email=email)
+        assert user is None
+        subscribe_url = "/subscribe?" + urllib.parse.urlencode(
+            {
+                "email": email,
+                "num_articles_per_day": 1,
+            }
+        )
+        response = api.api.test_client().get(subscribe_url)
+        assert response.status_code == 302
+        user = utils.get_user_info(conn=conn, email=email)
+        assert user is not None
+        assert user.email == email
+        assert not user.confirmed
+        bad_confirm_url = "/confirm?" + urllib.parse.urlencode(
+            {
+                "user_uuid": "Not right",
+            }
+        )
+        response = api.api.test_client().get(bad_confirm_url)
+        assert response.status_code == 400
+
+        confirm_url = "/confirm?" + urllib.parse.urlencode(
+            {
+                "user_uuid": user.user_uuid,
+            }
+        )
+        response = api.api.test_client().get(confirm_url)
+        assert response.status_code == 302
+        user = utils.get_user_info(conn=conn, email=email)
+        assert user.confirmed

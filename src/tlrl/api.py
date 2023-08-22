@@ -1,4 +1,5 @@
 import functools
+import re
 import sqlite3
 import urllib
 import uuid
@@ -13,6 +14,11 @@ from tlrl.send import send_mesage
 from tlrl.sender import _prepare_email
 
 api = Flask(__name__)
+
+
+def validate_email(email):
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(pattern, email)
 
 
 @api.route("/tlrl", methods=["POST"])
@@ -86,7 +92,6 @@ def feedback_route():
     except ValueError:
         print("CLIENT ERROR: Bad value for sentiment")
         return "Bad Request", 400
-
     else:
         try:
             article_id = int(article_id)
@@ -143,11 +148,22 @@ def confirm_route():
 @api.route("/subscribe")
 def subscribe_route():
     email = request.args.get("email")
-    num_articles_per_day = 1
-    if email is None:
-        return "No email", 400
-
     email = email.lower()
+    num_articles_per_day = request.args.get("num_articles_per_day")
+
+    if email is None:
+        print("CLIENT ERROR: No email passed to subscribe")
+        return "Bad Request", 400
+
+    if not validate_email(email):
+        print("CLIENT ERROR: Bad email passed to subscribe")
+        return "Bad Request", 400
+
+    try:
+        num_articles_per_day = int(num_articles_per_day)
+    except ValueError:
+        print("CLIENT ERROR: Bad value for numArticles")
+        return "Bad Request", 400
 
     conn = utils.get_connection()
     user_info = utils.get_user_info(conn=conn, email=email)
@@ -155,12 +171,14 @@ def subscribe_route():
         user_uuid = str(uuid.uuid4())
     else:
         user_uuid = user_info.user_uuid
+
     utils.subscribe(
         conn=conn,
         email=email,
         user_uuid=user_uuid,
         num_articles_per_day=num_articles_per_day,
     )
+
     if user_info is None or not user_info.confirmed:
         confirm_url = "news.derivativeworks.co/confirm?" + urllib.parse.urlencode(
             {
@@ -179,6 +197,7 @@ def subscribe_route():
             subject="Please Confirm Email For news.derivativeworks.co",
             msg=msg,
         )
+
     return redirect("/static/confirmation.html")
 
 

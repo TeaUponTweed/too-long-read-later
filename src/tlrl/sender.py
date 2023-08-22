@@ -10,37 +10,7 @@ from tlrl import db, utils
 from tlrl.send import send_mesage
 
 
-@dataclass
-class Article:
-    title: str
-    summary: str
-    url: str
-    article_id: int
-
-
-def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
-    with db.transaction(conn):
-        article_data = conn.execute(
-            """select rowid, title,summary, url from articles
-            where article_hn_date = ?
-            and summary is not null
-            """,
-            (date,),
-        ).fetchall()
-
-    articles = [
-        Article(
-            title=article_title,
-            summary=article_summary,
-            url=article_url,
-            article_id=article_id,
-        )
-        for article_id, article_title, article_summary, article_url in article_data
-    ]
-    return articles
-
-
-def _prepare_email(user_id: int, articles: Optional[List[Article]]) -> str:
+def _prepare_email(user_id: int, articles: Optional[List[utils.Article]]) -> str:
     # TODO eventually content curation and inlining decisions will go here. Ideally this would not have to know about the database....
     conn = utils.get_connection()
 
@@ -66,13 +36,8 @@ def gen_emails_to_send(
     if conn is None:
         conn = utils.get_connection()
 
-    with db.transaction(conn):
-        subscribed_users = conn.execute(
-            """select users.rowid,users.email from users
-               where users.confirmed and users.num_articles_per_day > 0"""
-        ).fetchall()
-
-    articles = get_articles(conn=conn, date=date)
+    articles = utils.get_articles(conn=conn, date=date)
+    subscribed_users = utils.get_subscribed_users(conn=conn)
 
     if len(subscribed_users) == 0:
         print("WARN: No users subscribed")
@@ -82,23 +47,23 @@ def gen_emails_to_send(
         print("WARN: No articles to send")
         return
 
-    for user_id, user_email in subscribed_users:
-        email_content = _prepare_email(user_id=user_id, articles=articles)
+    for user in subscribed_users:
+        email_content = _prepare_email(user_id=user.row_id, articles=articles)
         if email_content is not None:
-            yield (user_email, email_content)
+            yield (user.email, email_content)
 
 
 @prefect.task
-def pipeline():
+def pipeline(force_run_now: bool = False):
     conn = utils.get_connection()
     ix = utils.hours_since_5am_mt()
-    if not (ix == 0):
+    if ix == 0 or force_run_now:
+        conn = utils.get_connection()
+        date = utils.get_yesterday_mt()
+        for email, content in gen_emails_to_send(conn=conn, date=date):
+            send_mesage(email, f"Yesderdays News, Today! {date}'", content)
+    else:
         print("Only runs at 6AM MT")
-        return
-    conn = utils.get_connection()
-    date = utils.get_yesterday_mt()
-    for email, content in gen_emails_to_send(conn=conn, date=date):
-        send_mesage(email, f"Yesderdays News, Today! {date}'", content)
 
 
 if __name__ == "__main__":

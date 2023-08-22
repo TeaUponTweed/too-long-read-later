@@ -59,9 +59,9 @@ def ingest_impl(
         }
 
 
-def ingest_date(url: str, date: str) -> pd.DataFrame:
+def ingest_date(url: str, date: str, max_num_articles: int) -> pd.DataFrame:
     response = requests.get(url, params={"day": date}, timeout=30)
-    article_info = utils.get_article_info(response)
+    article_info = utils.get_article_info(response)[:max_num_articles]
     print(f"INFO: scraping {len(article_info)} links.")
     rows = []
     for link, title, article_score in article_info:
@@ -85,11 +85,11 @@ def ingest_date(url: str, date: str) -> pd.DataFrame:
 
 
 @prefect.task
-def pipeline():
+def pipeline(max_num_articles: int = 30):
     conn = utils.get_connection()
     url = "https://news.ycombinator.com/front"
     date = utils.get_yesterday_mt()
-    to_insert_df = ingest_date(url, date)
+    to_insert_df = ingest_date(url, date, max_num_articles=max_num_articles)
     with db.transaction(conn):
         db.insert_get_id(conn, "articles", to_insert_df)
 

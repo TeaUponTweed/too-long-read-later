@@ -129,7 +129,7 @@ def extract_content(html: str) -> Tuple[str, str, str]:
     return (title, text, summary)
 
 
-def get_article_info(response: requests.Response) -> tuple[str, str, int]:
+def get_article_info(response: requests.Response) -> list[tuple[str, str, int]]:
     soup = BeautifulSoup(response.text, "html.parser")
     title_lines = soup.find_all("span", class_="titleline")
     links = [line.find("a") for line in title_lines]
@@ -272,28 +272,49 @@ def get_user_info(
     return None
 
 
-def get_articles_without_feedback(
-    conn: sqlite3.Connection, date: str
-) -> List[Tuple[int, int]]:
-    q = """
-    select articles.rowid as article_id, users.rowid as user_id
-    from articles
-    cross join users
-    where article_hn_date = ?
-    and not exists (
-        select * from feedback
-        where articles.rowid = feedback.article_id
-        and users.rowid = feedback.user_id
-    )
-    """
-    with db.transaction(conn):
-        ret = conn.execute(q, (date,)).fetchall()
-    return list(ret)
-
-
 MT = timezone(timedelta(hours=-7))  # Mountain Time is -7 hours from UTC
 
 
 def get_yesterday_mt():
     yesterday = datetime.now(MT) - timedelta(days=1)
     return yesterday.strftime("%Y-%m-%d")
+
+
+@dataclass
+class Article:
+    title: str
+    summary: str
+    url: str
+    article_id: int
+
+
+def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
+    with db.transaction(conn):
+        article_data = conn.execute(
+            """select rowid, title,summary, url from articles
+            where article_hn_date = ?
+            and summary is not null
+            """,
+            (date,),
+        ).fetchall()
+
+    articles = [
+        Article(
+            title=article_title,
+            summary=article_summary,
+            url=article_url,
+            article_id=article_id,
+        )
+        for article_id, article_title, article_summary, article_url in article_data
+    ]
+    return articles
+
+
+def get_subscribed_users(conn: sqlite3.Connection) -> list[UserInfo]:
+    with db.transaction(conn):
+        subscribed_users = conn.execute(
+            """select users.rowid from users
+               where users.confirmed and users.num_articles_per_day > 0"""
+        ).fetchall()
+    # TODO this is very expensive and should be done in batch
+    return [get_user_info(conn=conn, row_id=row_id) for row_id, in subscribed_users]
