@@ -9,6 +9,7 @@ import requests
 from tlrl import db, utils
 from tlrl.scraper import ingest_date
 from tlrl.send import send_mesage
+from tlrl.sender import Article
 
 
 @click.group()
@@ -18,29 +19,31 @@ def cli():
 
 @cli.command("cat-link")
 @click.argument("link", required=True, type=str)
-@click.option("-u", "--user-uuid", required=False, type=str, default=None)
 @click.option("--inline/--no-inline", "inline", default=False)
 @click.option("-e", "--email", required=False, type=str, default=None)
-def cat_link(link: str, user_uuid: Optional[str], inline: bool, email: Optional[str]):
+def cat_link(link: str, inline: bool, email: Optional[str]):
     inferred_title, text, summary = utils.extract_content(
         utils.get_page_response(link).text
     )
 
+    html = utils.apply_template(
+        "email_template.html",
+        {
+            "articles": [
+                Article(
+                    title=inferred_title, summary=summary, url=link, article_id=None
+                )
+            ],
+            "user_uuid": None,
+        },
+    )
     if email is not None:
-        html = utils.apply_template(
-            "email_template.html",
-            {
-                "article_title": inferred_title,
-                "article_id": -1,
-                "article_url": link,
-                "user_uuid": user_uuid,
-            },
-        )
-        send_mesage(email, f"Detivative Works News: '{title}'", html)
+        send_mesage(email, f"Yesterdays News Now: '{title}'", html)
     else:
-        print(text)
-        print("-----------")
-        print(summary)
+        print(html)
+        # print(text)
+        # print("-----------")
+        # print(summary)
 
 
 @cli.command("ingest")

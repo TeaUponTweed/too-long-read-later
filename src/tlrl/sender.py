@@ -15,7 +15,8 @@ class Article:
     title: str
     summary: str
     url: str
-    artice_id: int
+    article_id: int
+
 
 def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
     with db.transaction(conn):
@@ -23,7 +24,8 @@ def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
             """select rowid, title,summary, url from articles
             where article_hn_date = ?
             and summary is not null
-            """, (date,)
+            """,
+            (date,),
         ).fetchall()
 
     articles = [
@@ -31,15 +33,14 @@ def get_articles(conn: sqlite3.Connection, date: str) -> list[Article]:
             title=article_title,
             summary=article_summary,
             url=article_url,
-            artice_id=artice_id
+            article_id=article_id,
         )
-        for artice_id, article_title, article_summary, article_url in article_data
+        for article_id, article_title, article_summary, article_url in article_data
     ]
     return articles
 
-def _prepare_email(
-    user_id: int, articles: Optional[List[Article]]
-) -> str:
+
+def _prepare_email(user_id: int, articles: Optional[List[Article]]) -> str:
     # TODO eventually content curation and inlining decisions will go here. Ideally this would not have to know about the database....
     conn = utils.get_connection()
 
@@ -57,7 +58,6 @@ def _prepare_email(
         return None
 
 
-
 def gen_emails_to_send(
     conn: Optional[sqlite3.Connection] = None, date: Optional[str] = None
 ) -> Iterator[Tuple[str, str]]:
@@ -72,15 +72,6 @@ def gen_emails_to_send(
                where users.confirmed and users.num_articles_per_day > 0"""
         ).fetchall()
 
-    # with db.transaction(conn):
-    #     q = """select rowid from articles
-    #            where article_hn_date = ?"""
-    #     print(q)
-    #     print(date)
-    #     article_ids = conn.execute(
-    #         """select rowid from articles
-    #            where article_hn_date = ?""", (date,)
-    #     ).fetchall()
     articles = get_articles(conn=conn, date=date)
 
     if len(subscribed_users) == 0:
@@ -100,14 +91,14 @@ def gen_emails_to_send(
 @prefect.task
 def pipeline():
     conn = utils.get_connection()
-    ix = utils.hours_since_6am_mt()
+    ix = utils.hours_since_5am_mt()
     if not (ix == 0):
         print("Only runs at 6AM MT")
         return
     conn = utils.get_connection()
     date = utils.get_yesterday_mt()
-    for email,  content in gen_emails_to_send(conn=conn, date=date):
-        send_mesage(email, f"Yesderdays Newsletter, Today! {date}'", content)
+    for email, content in gen_emails_to_send(conn=conn, date=date):
+        send_mesage(email, f"Yesderdays News, Today! {date}'", content)
 
 
 if __name__ == "__main__":

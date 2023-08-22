@@ -49,11 +49,11 @@ def convert_to_absolute_links(url: str, html: str) -> str:
     return str(soup)
 
 
-def hours_since_6am_mt():
+def hours_since_5am_mt():
     mt = pytz.timezone("US/Mountain")
     now = datetime.now(mt)
-    eight_am_today = now.replace(hour=6, minute=0, second=0, microsecond=0)
-    if now.hour < 6:
+    eight_am_today = now.replace(hour=5, minute=0, second=0, microsecond=0)
+    if now.hour < 5:
         eight_am_today = eight_am_today - timedelta(days=1)
     hours_passed = (now - eight_am_today).total_seconds() / 3600
     return round(hours_passed)

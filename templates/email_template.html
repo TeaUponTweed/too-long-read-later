@@ -49,52 +49,48 @@
   </head>
 <body>
 
-  <div class="unsubscribe">
-    <a href="news.derivativeworks.co/unsubscribe?user_uuid={{user_uuid}}">Unsubscribe</a>
-  </div>
-
   <div class="article-container">
     {% for article in articles %}
       <div class="article">
         <h2 class="title"><a href="{{ article.url }}">{{ article.title }} </a></h2>
         <p class="summary"><em>{{ article.summary }}</em></p>
-
-        <table width="100%" cellspacing="0" cellpadding="0">
-            <tr>
+        {% if user_uuid is not none and article.article_id is not none %}
+          <table width="100%" cellspacing="0" cellpadding="0">
+              <tr>
                 <td align="center">
-                    <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
-                        <tr>
-                            <td>
-            <a href="news.derivativeworks.co/feedback?sentiment=1&user_uuid={{user_uuid}}&article_id={{article.artice_id}}">Interesting</a>
-                            </td>
-                        </tr>
-                    </table>
-                    <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
-                        <tr>
-                            <td>
-            <a href="news.derivativeworks.co/feedback?sentiment=0&user_uuid={{user_uuid}}&article_id={{article.artice_id}}">Neutral</a>
-                            </td>
-                        </tr>
-                    </table>
-                    <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
-                        <tr>
-                            <td>
-            <a href="news.derivativeworks.co/feedback?sentiment=-1&user_uuid={{user_uuid}}&article_id={{article.artice_id}}">Not Interesting</a>
-                            </td>
-                        </tr>
-                    </table>
+                  <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
+                    <tr>
+                        <td>
+                          <a href="news.derivativeworks.co/feedback?sentiment=1&user_uuid={{user_uuid}}&article_id={{article.article_id}}">Interesting</a>
+                        </td>
+                    </tr>
+                  </table>
+                  <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
+                    <tr>
+                        <td>
+                          <a href="news.derivativeworks.co/feedback?sentiment=0&user_uuid={{user_uuid}}&article_id={{article.article_id}}">Neutral</a>
+                        </td>
+                    </tr>
+                  </table>
+                  <table width="30%" cellspacing="0" cellpadding="0" style="display:inline-table;">
+                    <tr>
+                        <td>
+                          <a href="news.derivativeworks.co/feedback?sentiment=-1&user_uuid={{user_uuid}}&article_id={{article.article_id}}">Not Interesting</a>
+                        </td>
+                    </tr>
+                  </table>
                 </td>
-            </tr>
-        </table>
+              </tr>
+          </table>
+        {% endif %}
         <hr>
-
       </div>
     {% endfor %}
   </div>
-
-  <div class="unsubscribe">
-    <a href="news.derivativeworks.co/unsubscribe?user_uuid={{user_uuid}}">Unsubscribe</a>
-  </div>
-
+  {% if user_uuid is not none %}
+    <div class="unsubscribe">
+      <a href="news.derivativeworks.co/unsubscribe?user_uuid={{user_uuid}}">Unsubscribe</a>
+    </div>
+  {% endif %}
 </body>
 </html>

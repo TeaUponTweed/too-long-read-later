@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 import pandas as pd
-from flask import Flask, jsonify, request, send_file, send_from_directory, redirect
+from flask import Flask, jsonify, redirect, request, send_file, send_from_directory
 
 from tlrl import db, utils
 from tlrl.scraper import ingest_impl
