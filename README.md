@@ -10,7 +10,7 @@ The system is currently running at news.derivativeworks.co and configured to sen
 pip install -r requirements.txt
 pip install -e .
 # install dev dependencies
-pip install -r dev-requirements
+pip install -r dev-requirements.txt
 # if dependencies change, update requirements.txt
 pip-compile
 ```

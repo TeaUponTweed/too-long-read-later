@@ -10,9 +10,9 @@ import tiktoken
 openai.api_key = os.environ["OPENAI_API"]
 from bs4 import BeautifulSoup
 
-GPT_MODEL = "gpt-3.5-turbo"
+GPT_MODEL = "gpt-4o-mini"
 ENC = tiktoken.encoding_for_model(GPT_MODEL)
-MAX_TOKENS = 4096
+MAX_TOKENS = 8192
 SLACK_TOKENS = 500
 
 
