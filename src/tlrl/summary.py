@@ -3,11 +3,12 @@ import os
 import sys
 from typing import Optional
 
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["OPENAI_API"])
 import requests
 import tiktoken
 
-openai.api_key = os.environ["OPENAI_API"]
 from bs4 import BeautifulSoup
 
 GPT_MODEL = "gpt-4o-mini"
@@ -56,17 +57,15 @@ Here is the text:
     ]
     for _ in range(retries):
         try:
-            response = openai.ChatCompletion.create(
-                model=GPT_MODEL,
-                messages=messages,
-                temperature=0.3,
-            )
+            response = client.chat.completions.create(model=GPT_MODEL,
+            messages=messages,
+            temperature=0.3)
         except Exception as e:
             print(f"ERROR: Failed to get summary {e}")
             time.sleep(initial_wait)
             initial_wait = initial_wait * 2
         else:
-            summary = response.choices[0].message["content"]
+            summary = response.choices[0].message.content
             if summary.lower().rstrip('."').lstrip('"') == "unable to summarize":
                 print("INFO: GPT chose not to summarize")
                 return None
