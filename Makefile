@@ -63,11 +63,11 @@ docker:
 	docker build -t news-server:latest  -f containers/Dockerfile_server  .
 
 DB_DIR := $(dir $(DB_FILE_LOC))
-DB_FILE_NAME := $(basename $(notdir $(DB_FILE_LOC)))
+DB_FILE_NAME := $(notdir $(DB_FILE_LOC))
 .PHONY: docker-scrape
 docker-scrape: check-scraper-env
 	docker run \
-		-v "$(DB_DIR)":/opt/db \
+		-v $(DB_DIR):/opt/db \
 		-e DB_FILE_LOC="/opt/db/$(DB_FILE_NAME)" \
 		-e OPENAI_API=$$OPENAI_API \
 		--entrypoint "/bin/sh" \

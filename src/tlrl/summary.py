@@ -8,7 +8,6 @@ from openai import OpenAI
 client = OpenAI(api_key=os.environ["OPENAI_API"])
 import requests
 import tiktoken
-
 from bs4 import BeautifulSoup
 
 GPT_MODEL = "gpt-4o-mini"
@@ -57,9 +56,9 @@ Here is the text:
     ]
     for _ in range(retries):
         try:
-            response = client.chat.completions.create(model=GPT_MODEL,
-            messages=messages,
-            temperature=0.3)
+            response = client.chat.completions.create(
+                model=GPT_MODEL, messages=messages, temperature=0.3
+            )
         except Exception as e:
             print(f"ERROR: Failed to get summary {e}")
             time.sleep(initial_wait)

@@ -33,9 +33,7 @@ def ingest_impl(
 
         scores = utils.get_scores(response.text)
         if len(scores) > 0:
-            readability_rms = math.sqrt(
-                sum(score**2 for score in scores) / len(scores)
-            )
+            readability_rms = math.sqrt(sum(score**2 for score in scores) / len(scores))
             readability_sum = sum(scores)
             readability_mean = sum(scores) / len(scores)
         else:
@@ -80,7 +78,6 @@ def ingest_date(url: str, date: str, max_num_articles: int) -> pd.DataFrame:
                 rows.append(row)
             else:
                 print(f"WARN Got no data from {link}")
-
     return pd.DataFrame.from_dict(rows)
 
 
