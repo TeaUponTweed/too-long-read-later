@@ -653,11 +653,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/ab/fdbbd91d8d82bf1a723ba88ec3e3d76c022b53c391b0c13cad441cdb8f9e/lxml-5.4.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:b12cb6527599808ada9eb2cd6e0e7d3d8f13fe7bbb01c6311255a15ded4c7ab4", size = 3487862 },
 ]
 
-[package.optional-dependencies]
-html-clean = [
-    { name = "lxml-html-clean" },
-]
-
 [[package]]
 name = "lxml-html-clean"
 version = "0.4.2"
@@ -1365,21 +1360,6 @@ requires-dist = [
 provides-extras = ["speed", "test"]
 
 [[package]]
-name = "readability-lxml"
-version = "0.8.4.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "chardet" },
-    { name = "cssselect" },
-    { name = "lxml", extra = ["html-clean"] },
-    { name = "lxml-html-clean", marker = "python_full_version < '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/55/3e/dc87d97532ddad58af786ec89c7036182e352574c1cba37bf2bf783d2b15/readability_lxml-0.8.4.1.tar.gz", hash = "sha256:9d2924f5942dd7f37fb4da353263b22a3e877ccf922d0e45e348e4177b035a53", size = 22874 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/75/2cc58965097e351415af420be81c4665cf80da52a17ef43c01ffbe2caf91/readability_lxml-0.8.4.1-py3-none-any.whl", hash = "sha256:874c0cea22c3bf2b78c7f8df831bfaad3c0a89b7301d45a188db581652b4b465", size = 19912 },
-]
-
-[[package]]
 name = "regex"
 version = "2024.11.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1608,7 +1588,6 @@ dependencies = [
     { name = "pandas" },
     { name = "prefect" },
     { name = "readability" },
-    { name = "readability-lxml" },
     { name = "requests" },
     { name = "tiktoken" },
 ]
@@ -1642,7 +1621,6 @@ requires-dist = [
     { name = "prefect", specifier = ">=1.0,<2.0" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "readability", directory = "python-readability" },
-    { name = "readability-lxml" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tiktoken", specifier = ">=0.8.0" },

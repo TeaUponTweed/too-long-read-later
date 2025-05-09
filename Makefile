@@ -9,6 +9,9 @@ polish:
 	black src tests
 
 .PHONY: check-env
+check-env: check-email-env check-scraper-env
+
+.PHONY: check-email-env
 check-env:
 ifndef SMTP_UN
 	$(error SMTP_UN is undefined)
@@ -19,14 +22,18 @@ endif
 ifndef EMAIL_ADDRESS
 	$(error EMAIL_ADDRESS is undefined)
 endif
+ifndef REAL_TEST_EMAIL_ADDRESS
+	$(error REAL_TEST_EMAIL_ADDRESS is undefined)
+endif
+
+
+.PHONY: check-scraper-env
+check-scraper-env:
 ifndef OPENAI_API
 	$(error OPENAI_API is undefined)
 endif
 ifndef DB_FILE_LOC
 	$(error DB_FILE_LOC is undefined)
-endif
-ifndef REAL_TEST_EMAIL_ADDRESS
-	$(error REAL_TEST_EMAIL_ADDRESS is undefined)
 endif
 
 .PHONY: test
@@ -55,10 +62,13 @@ docker:
 	docker build -t news-sender:latest  -f containers/Dockerfile_sender  .
 	docker build -t news-server:latest  -f containers/Dockerfile_server  .
 
+DB_DIR := $(dir $(DB_FILE_LOC))
+DB_FILE_NAME := $(basename $(notdir $(DB_FILE_LOC)))
 .PHONY: docker-scrape
-docker-scrape: docker
+docker-scrape: check-scraper-env
 	docker run \
-		-v $$PWD/testdb:/opt/db \
-		-e DB_FILE_LOC=/opt/db/news.db \
-		-e OPENAI_API="$(OPENAI_API)" \
-		news-scraper:latest
+		-v "$(DB_DIR)":/opt/db \
+		-e DB_FILE_LOC="/opt/db/$(DB_FILE_NAME)" \
+		-e OPENAI_API=$$OPENAI_API \
+		--entrypoint "/bin/sh" \
+		news-scraper:latest -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"

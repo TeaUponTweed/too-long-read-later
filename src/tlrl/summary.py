@@ -61,8 +61,8 @@ Here is the text:
                 messages=messages,
                 temperature=0.3,
             )
-        except openai.error.ServiceUnavailableError:
-            print("INFO waiting and retrying to get summary")
+        except Exception as e:
+            print(f"ERROR: Failed to get summary {e}")
             time.sleep(initial_wait)
             initial_wait = initial_wait * 2
         else:
@@ -73,7 +73,3 @@ Here is the text:
             return summary
     print("WARN Failed to get summary")
     return None
-
-
-if __name__ == "__main__":
-    main(sys.argv[1])

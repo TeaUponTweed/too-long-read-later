@@ -24,7 +24,6 @@ dependencies = [
   "pandas",
   "prefect>=1.0,<2.0",
   "readability",
-  "readability-lxml",
   "requests",
   "tiktoken>=0.8.0",
 ]

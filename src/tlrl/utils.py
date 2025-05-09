@@ -92,7 +92,7 @@ def get_page_response(
     o = urlparse(url)
     query = parse_qs(o.query)
     # get fake user agent
-    headers = {"User-Agent": get_user_agent()["google chrome"]}
+    headers = {"User-Agent": get_user_agent()["Chrome"]}
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
     response = requests.get(
