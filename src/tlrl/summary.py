@@ -68,7 +68,7 @@ Here is the text:
         else:
             summary = response.choices[0].message["content"]
             if summary.lower().rstrip('."').lstrip('"') == "unable to summarize":
-                print("INFO GPT chose not to summarize")
+                print("INFO: GPT chose not to summarize")
                 return None
             return summary
     print("WARN Failed to get summary")

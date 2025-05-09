@@ -10,3 +10,4 @@ data/news.db-shm
 data/news.db-wal
 too_long_read_later/too_long_read_later.zip
 .env
+testdb/

@@ -1,8 +1,7 @@
 .PHONY: install
 install:
-	pip install --upgrade pip
-	pip install -r dev-requirements.txt
-	pip install -r requirements.txt -e .
+	uv sync
+	uv pip install -e .
 
 .PHONY: polish
 polish:
@@ -32,7 +31,7 @@ endif
 
 .PHONY: test
 test:
-	pytest -m "not slow" tests
+	uv run pytest --cov-report=xml -m "not slow" tests
 
 .PHONY: integration-test
 integration-test: check-env
@@ -48,3 +47,18 @@ integration-test: check-env
 		('some-uuid-2', '$(REAL_TEST_EMAIL_ADDRESS)', 1, 30);"
 	# run send
 	python -c 'from tlrl.sender import pipeline; pipeline.run(force_run_now=True)'
+
+
+.PHONY: docker
+docker:
+	docker build -t news-scraper:latest -f containers/Dockerfile_scraper .
+	docker build -t news-sender:latest  -f containers/Dockerfile_sender  .
+	docker build -t news-server:latest  -f containers/Dockerfile_server  .
+
+.PHONY: docker-scrape
+docker-scrape: docker
+	docker run \
+		-v $$PWD/testdb:/opt/db \
+		-e DB_FILE_LOC=/opt/db/news.db \
+		-e OPENAI_API="$(OPENAI_API)" \
+		news-scraper:latest

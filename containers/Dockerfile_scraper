@@ -1,18 +1,10 @@
-FROM python:3.10-slim
+FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 
 WORKDIR /app
-
-RUN pip install --no-cache-dir -U pip setuptools wheel
-
-COPY ./requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
-RUN pip install --no-cache-dir -e .
-
-RUN pip install --no-cache-dir -e python-readability
+RUN uv sync && uv pip install --system -e .
 
 ENV PYTHONUNBUFFERED=.
 
-ENTRYPOINT [ "python3", "src/tlrl/scraper.py" ]
+ENTRYPOINT [ "uv", "run", "src/tlrl/scraper.py" ]

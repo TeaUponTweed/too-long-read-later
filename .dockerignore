@@ -4,3 +4,8 @@ python_venv/
 aws/
 containers/
 *.egg-info
+logs/
+data/
+.venv/
+.pytest_cache
+testdb/
