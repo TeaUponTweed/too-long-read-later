@@ -7,12 +7,7 @@ The system is currently running at news.derivativeworks.co and configured to sen
 # Installation
 ```bash
 # install dependencies
-pip install -r requirements.txt
-pip install -e .
-# install dev dependencies
-pip install -r dev-requirements.txt
-# if dependencies change, update requirements.txt
-pip-compile
+make install
 ```
 
 # Running
@@ -47,7 +42,30 @@ TODO
 	- provide feedback that the email was sent successfully or if not (alert for both is fine)
 - use hacker news api rather than scraping https://github.com/HackerNews/API
 - look at link filetype to make sure images are scraped correctly
+# Debugging
+## Logs
+`docker compose logs yesterdays_news_scraper`
+`docker compose logs yesterdays_news_sender`
+`docker compose logs yesterdays_news_server`
 
+## To Run Ingestion Manually
+Frist, check artciles
+`sqlite3 ../databases/news/news.db   "select article_hn_date,count(*) from articles group by article_hn_date;"`
+
+Assuming `server_config-yesterdays_news_scraper:latest` and making sure to set `OPENAI_API` run:
+```
+docker run \
+ -v /opt/databases/news:/opt/db  \
+ -e DB_FILE_LOC="/opt/db/news.db" \
+ -e OPENAI_API="$OPENAI_API" \
+ --entrypoint "/bin/sh" \
+ server_config-yesterdays_news_scraper:latest \
+ -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"
+```
+
+Check the article count again
+
+# Misc
 
 ```
 docker ps | grep server_config-yesterdays_news_scraper

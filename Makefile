@@ -5,8 +5,8 @@ install:
 
 .PHONY: polish
 polish:
-	isort src tests
-	black src tests
+	uv run isort src tests
+	uv run black src tests
 
 .PHONY: check-env
 check-env: check-email-env check-scraper-env
@@ -71,4 +71,4 @@ docker-scrape: check-scraper-env
 		-e DB_FILE_LOC="/opt/db/$(DB_FILE_NAME)" \
 		-e OPENAI_API=$$OPENAI_API \
 		--entrypoint "/bin/sh" \
-		news-scraper:latest -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"
+		server_config-yesterdays_news_scraper:latest -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"
