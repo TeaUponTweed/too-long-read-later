@@ -22,6 +22,7 @@ dependencies = [
   "markdown",
   "openai",
   "pandas",
+  "pendulum==2.*",
   "prefect>=1.0,<2.0",
   "readability",
   "requests",

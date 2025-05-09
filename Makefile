@@ -71,4 +71,10 @@ docker-scrape: check-scraper-env
 		-e DB_FILE_LOC="/opt/db/$(DB_FILE_NAME)" \
 		-e OPENAI_API=$$OPENAI_API \
 		--entrypoint "/bin/sh" \
-		server_config-yesterdays_news_scraper:latest -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"
+		news-scraper:latest -c "uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'"
+
+scrape: check-scraper-env
+	uv run python -c 'from tlrl.scraper import pipeline; pipeline.run()'
+
+server: check-scraper-env
+	uv run gunicorn tlrl.api:api
