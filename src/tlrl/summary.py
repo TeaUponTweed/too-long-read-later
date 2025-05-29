@@ -9,7 +9,7 @@ client = OpenAI(api_key=os.environ["OPENAI_API"])
 
 GPT_MODEL = "gpt-4o-mini"
 ENC = tiktoken.encoding_for_model(GPT_MODEL)
-MAX_TOKENS = 8192
+MAX_TOKENS = 8192 * 2
 SLACK_TOKENS = 500
 
 

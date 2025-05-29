@@ -14,7 +14,8 @@ from tlrl import db, utils
 
 def get_hn_stories_for_date(date: str, max_stories: int) -> list:
     """Get top HN stories for a specific date using HN Search API"""
-    url = "https://hn.algolia.com/api/v1/search_by_date"
+    url = "https://hn.algolia.com/api/v1/search"
+
     start_timestamp = get_date_timestamp(date)
     end_timestamp = start_timestamp + 86400
     params = {
@@ -32,7 +33,7 @@ def get_hn_stories_for_date(date: str, max_stories: int) -> list:
         # only get stories with a url
         if hit.get("url"):
             stories.append((hit["url"], hit.get("title", ""), hit.get("points", 0)))
-
+    stories = sorted(stories, key=lambda x: x[2], reverse=True)[:max_stories]
     return stories
 
 
@@ -124,7 +125,7 @@ def ingest_date(date: str, max_num_articles: int) -> int:
             )
         except Exception as e:
             print(f"ERR Failed to ingest {link}. Failed with:\n{e}")
-            raise
+            row = None
 
         if row is not None:
             try:
@@ -148,7 +149,7 @@ def ingest_date(date: str, max_num_articles: int) -> int:
 
 
 @prefect.task
-def pipeline(max_num_articles: int = 30, date: Optional[str] = None):
+def pipeline(max_num_articles: int = 50, date: Optional[str] = None):
     if date is None:
         date = utils.get_yesterday_mt()
 
