@@ -45,7 +45,7 @@ Here is the text:
     tot_tokens = len(tokens) + len(system_tokens)
     if tot_tokens > MAX_TOKENS - SLACK_TOKENS:
         print(
-            f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS - SLACK_TOKENS - system_tokens}"
+            f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS - SLACK_TOKENS - len(system_tokens)}"
         )
         prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS - len(system_tokens)])
 
