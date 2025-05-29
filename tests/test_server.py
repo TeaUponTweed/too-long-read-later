@@ -1,9 +1,7 @@
 import os
 import pathlib
-import random
 import time
 import urllib
-import uuid
 from typing import List
 
 import pandas as pd
@@ -118,7 +116,7 @@ def user_ids(db_loc: pathlib.Path) -> List[int]:
 
     conn = utils.get_connection(str(db_loc))
     with db.transaction(conn):
-        res = conn.execute(f"select rowid from users").fetchall()
+        res = conn.execute("select rowid from users").fetchall()
     user_ids = [int(user_id) for user_id, in res]
     assert len(user_ids) == user_df.shape[0]
     return user_ids
@@ -146,7 +144,7 @@ def test_api(db_loc, article_ids, user_ids, num_articles_per_day):
                 )
                 with db.transaction(conn):
                     ret = conn.execute(
-                        f"select sentiment from feedback where user_id = ? and article_id = ?",
+                        "select sentiment from feedback where user_id = ? and article_id = ?",
                         (user_info.row_id, article.article_id),
                     ).fetchone()
                 assert response.status_code == 302

@@ -1,10 +1,6 @@
-import math
-import sqlite3
 from typing import Optional
 
 import click
-import pandas as pd
-import requests
 
 from tlrl import db, utils
 from tlrl.scraper import ingest_date
@@ -37,7 +33,7 @@ def cat_link(link: str, inline: bool, email: Optional[str]):
         },
     )
     if email is not None:
-        send_mesage(email, f"Yesterdays News Now: '{title}'", html)
+        send_mesage(email, f"Yesterdays News Now: '{inferred_title}'", html)
     else:
         print(html)
         # print(text)
@@ -72,22 +68,6 @@ def init_db_impl(db_file: str, schema_file: str) -> str:
 def init_db(db_file: str, schema_file: str):
     schema = init_db_impl(db_file=db_file, schema_file=schema_file)
     print(schema)
-
-
-@cli.command("test-send")
-@click.option("-d", "--db-file", required=True, type=str)
-@click.option("-e", "--email", "allowed_email", required=True, type=str)
-def test_send(db_file: str, allowed_email: str):
-    schema = init_db_impl(db_file=db_file, schema_file=schema_file)
-    for email, title, content, article_id, user_id in gen_emails_to_send():
-        if email != allowed_email:
-            continue
-        send_mesage(email, f"Hacker News: '{title}'", content)
-        with db.transaction(conn):
-            conn.execute(
-                "insert into feedback(user_id,article_id) values (?,?)",
-                (user_id, article_id),
-            )
 
 
 if __name__ == "__main__":

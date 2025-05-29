@@ -1,32 +1,19 @@
-import base64
-import datetime
-import functools
 import os
-import pathlib
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import pytz
 import requests
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
 from jinja2 import Environment, FileSystemLoader
 from lxml.html.clean import Cleaner
 from readability import Document
 
 from tlrl import db
 from tlrl.summary import get_summary
-
-
-@functools.cache
-def get_user_agent() -> UserAgent:
-    try:
-        return UserAgent(use_external_data=True)
-    except:
-        return UserAgent()
 
 
 def convert_to_absolute_links(url: str, html: str) -> str:
@@ -91,8 +78,8 @@ def get_page_response(
     # parse url to get response
     o = urlparse(url)
     query = parse_qs(o.query)
-    # get fake user agent
-    headers = {"User-Agent": get_user_agent()["Chrome"]}
+    # use an honest user agent
+    headers = {"User-Agent": "Derivative Works Bot"}
     # extract the URL without query parameters
     url = o._replace(query=None).geturl()
     response = requests.get(

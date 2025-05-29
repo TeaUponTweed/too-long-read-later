@@ -1,12 +1,9 @@
-import itertools
-import random
 import sqlite3
-from dataclasses import dataclass
 from typing import Iterator, List, Optional, Tuple
 
 import prefect
 
-from tlrl import db, utils
+from tlrl import utils
 from tlrl.send import send_mesage
 
 

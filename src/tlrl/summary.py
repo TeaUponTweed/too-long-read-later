@@ -1,14 +1,11 @@
-import json
 import os
-import sys
+import time
 from typing import Optional
 
+import tiktoken
 from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["OPENAI_API"])
-import requests
-import tiktoken
-from bs4 import BeautifulSoup
 
 GPT_MODEL = "gpt-4o-mini"
 ENC = tiktoken.encoding_for_model(GPT_MODEL)
@@ -27,7 +24,9 @@ def get_summary(
     system_prompt = "You are a helpful assistant."
     prompt = f"""
 Summarize the following text into a concise two to three sentence blurb to hook potential readers.
-Respond with "Unable to summarize" if the text is blocked behind a paywall or procedural (e.g. patch notes)
+Respond with "Unable to summarize" if the text is blocked behind a paywall or procedural (e.g. patch notes) or a generic message such as:
+- Notion is a ...
+- The New York Times
 
 Please adhere to these guidelines:
 - Do not reference the "article."
@@ -44,11 +43,12 @@ Here is the text:
 """
     system_tokens = ENC.encode(system_prompt)
     tokens = ENC.encode(prompt)
-    if len(tokens) > MAX_TOKENS - SLACK_TOKENS:
+    tot_tokens = len(tokens) + len(system_tokens)
+    if tot_tokens > MAX_TOKENS - SLACK_TOKENS:
         print(
-            f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS-SLACK_TOKENS}"
+            f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS - SLACK_TOKENS - system_tokens}"
         )
-        prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS])
+        prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS - system_tokens])
 
     messages = [
         {"role": "system", "content": system_prompt},

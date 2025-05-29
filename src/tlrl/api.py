@@ -1,9 +1,6 @@
-import functools
 import re
-import sqlite3
 import urllib
 import uuid
-from typing import Optional
 
 import pandas as pd
 from flask import Flask, jsonify, redirect, request, send_file, send_from_directory
