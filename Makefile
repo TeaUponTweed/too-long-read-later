@@ -7,6 +7,7 @@ install:
 polish:
 	uv run isort src tests
 	uv run black src tests
+	uv run ruff check
 
 .PHONY: check-env
 check-env: check-email-env check-scraper-env

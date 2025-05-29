@@ -38,4 +38,5 @@ readability = { path = "python-readability" }
 dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
+    "ruff>=0.11.9",
 ]

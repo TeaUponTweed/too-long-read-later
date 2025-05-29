@@ -51,12 +51,13 @@ def gen_emails_to_send(
 
 
 @prefect.task
-def pipeline(force_run_now: bool = False):
+def pipeline(force_run_now: bool = False, date=None):
     conn = utils.get_connection()
     ix = utils.hours_since_5am_mt()
     if ix == 0 or force_run_now:
         conn = utils.get_connection()
-        date = utils.get_yesterday_mt()
+        if date is None:
+            date = utils.get_yesterday_mt()
         for email, content in gen_emails_to_send(conn=conn, date=date):
             send_mesage(email, f"Yesderdays News, Today! {date}'", content)
     else:

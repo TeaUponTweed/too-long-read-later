@@ -15,20 +15,22 @@ from tlrl import db, utils
 def get_hn_stories_for_date(date: str, max_stories: int) -> list:
     """Get top HN stories for a specific date using HN Search API"""
     url = "https://hn.algolia.com/api/v1/search_by_date"
+    start_timestamp = get_date_timestamp(date)
+    end_timestamp = start_timestamp + 86400
     params = {
         "tags": "story",
-        "numericFilters": f"created_at_i>={get_date_timestamp(date)},created_at_i<{get_date_timestamp(date) + 86400}",
+        "numericFilters": f"created_at_i>{start_timestamp},created_at_i<{end_timestamp}",
         "hitsPerPage": max_stories,
-        "sortBy": "popularity",
     }
-
-    response = requests.get(url, params=params, timeout=30)
+    headers = {"User-Agent": "Derivative Works Bot"}
+    response = requests.get(url, params=params, headers=headers, timeout=30)
     response.raise_for_status()
     data = response.json()
 
     stories = []
     for hit in data.get("hits", []):
-        if hit.get("url"):  # Only include stories with URLs
+        # only get stories with a url
+        if hit.get("url"):
             stories.append((hit["url"], hit.get("title", ""), hit.get("points", 0)))
 
     return stories
@@ -64,7 +66,7 @@ def ingest_impl(
         if response.status_code != 200:
             print(f"ERR {link}. returned code {response.status_code}")
             return
-        inferred_title, summary = utils.extract_content(response.text)
+        inferred_title, _, summary = utils.extract_content(response.text)
         if title is None:
             title = inferred_title
         scores = utils.get_scores(response.text)
@@ -122,7 +124,7 @@ def ingest_date(date: str, max_num_articles: int) -> int:
             )
         except Exception as e:
             print(f"ERR Failed to ingest {link}. Failed with:\n{e}")
-            continue
+            raise
 
         if row is not None:
             try:
@@ -141,9 +143,6 @@ def ingest_date(date: str, max_num_articles: int) -> int:
                 print(f"ERR Failed to insert {link} into database: {e}")
         else:
             print(f"WARN Got no data from {link}")
-
-        # Rate limiting
-        time.sleep(0.3)
 
     return successful_inserts
 

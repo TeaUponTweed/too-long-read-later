@@ -26,7 +26,6 @@ def get_summary(
 Summarize the following text into a concise two to three sentence blurb to hook potential readers.
 Respond with "Unable to summarize" if the text is blocked behind a paywall or procedural (e.g. patch notes) or a generic message such as:
 - Notion is a ...
-- The New York Times
 
 Please adhere to these guidelines:
 - Do not reference the "article."
@@ -48,7 +47,7 @@ Here is the text:
         print(
             f"WARN: Truncating tokens from {len(tokens)} -> {MAX_TOKENS - SLACK_TOKENS - system_tokens}"
         )
-        prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS - system_tokens])
+        prompt = ENC.decode(tokens[: MAX_TOKENS - SLACK_TOKENS - len(system_tokens)])
 
     messages = [
         {"role": "system", "content": system_prompt},
